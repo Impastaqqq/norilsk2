@@ -1,0 +1,296 @@
+# manage.py
+import os
+import sys
+import subprocess
+import time
+import re
+
+# Resolve project root path dynamically based on script location
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def load_env() -> dict[str, str]:
+    """Parses a local .env file in the project directory."""
+    env = {}
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    env[k.strip()] = v.strip().strip('"').strip("'")
+    return env
+
+# Resolve SDK root path from local env file, system environment, or hardcoded default fallback
+env_vars = load_env()
+SDK_DIR = env_vars.get("RENPY_SDK") or os.environ.get("RENPY_SDK") or r"h:\renpy\renpy-8.5.3-sdk"
+
+def get_sdk_paths() -> dict[str, str]:
+    """Resolves SDK binaries depending on the platform."""
+    is_windows = sys.platform.startswith("win")
+    is_mac = sys.platform == "darwin"
+    
+    renpy_exe = ""
+    python_exe = ""
+    renpy_py = os.path.join(SDK_DIR, "renpy.py")
+    
+    if is_windows:
+        renpy_exe = os.path.join(SDK_DIR, "renpy.exe")
+        # Try to locate Python directory in windows folder
+        python_exe = os.path.join(SDK_DIR, "lib", "py3-windows-x86_64", "python.exe")
+        if not os.path.exists(python_exe):
+            # Fallback scanning
+            lib_dir = os.path.join(SDK_DIR, "lib")
+            if os.path.exists(lib_dir):
+                for sub in os.listdir(lib_dir):
+                    candidate = os.path.join(lib_dir, sub, "python.exe")
+                    if os.path.exists(candidate):
+                        python_exe = candidate
+                        break
+    elif is_mac:
+        renpy_exe = os.path.join(SDK_DIR, "Ren'Py.app", "Contents", "MacOS", "Ren'Py")
+        lib_dir = os.path.join(SDK_DIR, "lib")
+        if os.path.exists(lib_dir):
+            for sub in os.listdir(lib_dir):
+                if "mac-" in sub:
+                    candidate = os.path.join(lib_dir, sub, "python")
+                    if os.path.exists(candidate):
+                        python_exe = candidate
+                        break
+    else:  # Linux/Unix
+        renpy_exe = os.path.join(SDK_DIR, "renpy.sh")
+        lib_dir = os.path.join(SDK_DIR, "lib")
+        if os.path.exists(lib_dir):
+            for sub in os.listdir(lib_dir):
+                if "linux-" in sub:
+                    candidate = os.path.join(lib_dir, sub, "python")
+                    if os.path.exists(candidate):
+                        python_exe = candidate
+                        break
+                        
+    # Fallbacks if not found
+    if not renpy_exe or not os.path.exists(renpy_exe):
+        renpy_exe = "renpy.exe" if is_windows else "renpy.sh"
+    if not python_exe or not os.path.exists(python_exe):
+        python_exe = sys.executable  # Fallback to current python interpreter
+        
+    return {
+        "renpy_exe": renpy_exe,
+        "python_exe": python_exe,
+        "renpy_py": renpy_py
+    }
+
+def cmd_verify() -> None:
+    """Checks the validity of Paths and Environment Configuration."""
+    print("=== Ren'Py Environment Verification ===")
+    print(f"Project Path (Detected): {PROJECT_DIR}")
+    
+    # Check .env
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    if os.path.exists(env_path):
+        print(f"[OK] Found local config at: {env_path}")
+    else:
+        print("[WARNING] Local .env file not found in project root. Will fallback to env vars or defaults.")
+        
+    # Check SDK Dir
+    print(f"SDK Path: {SDK_DIR}")
+    if os.path.exists(SDK_DIR):
+        print("[OK] SDK Directory exists.")
+    else:
+        print(f"[ERROR] SDK Directory does not exist: '{SDK_DIR}'")
+        print("Please configure 'RENPY_SDK' in a local '.env' file.")
+        sys.exit(1)
+        
+    paths = get_sdk_paths()
+    errs = 0
+    for name, path in paths.items():
+        if os.path.exists(path):
+            print(f"[OK] Found {name}: {path}")
+        else:
+            print(f"[ERROR] Missing {name}: {path}")
+            errs += 1
+            
+    if errs == 0:
+        print("\n[SUCCESS] Environment is fully valid and configured correctly!")
+    else:
+        print(f"\n[ERROR] Found {errs} issues with path resolution.")
+        sys.exit(1)
+
+def cmd_run() -> None:
+    """Launches the Ren'Py project."""
+    paths = get_sdk_paths()
+    cmd = [paths["renpy_exe"], PROJECT_DIR, "run"]
+    print(f"[Runner] Executing: {' '.join(cmd)}")
+    subprocess.run(cmd)
+
+def cmd_lint() -> None:
+    """Lints the Ren'Py project."""
+    paths = get_sdk_paths()
+    cmd = [paths["renpy_exe"], PROJECT_DIR, "lint"]
+    print(f"[Runner] Executing: {' '.join(cmd)}")
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        sys.exit(result.returncode)
+
+def cmd_warp(warp_line: str) -> None:
+    """Warps the Ren'Py project to a specific file and line."""
+    paths = get_sdk_paths()
+    cmd = [paths["renpy_exe"], PROJECT_DIR, "warp", warp_line]
+    print(f"[Runner] Executing: {' '.join(cmd)}")
+    subprocess.run(cmd)
+
+def cmd_test(test_suite: str = "global", no_kill: bool = False) -> None:
+    """Executes the test suite with timeout and auto-termination (unless no_kill is True)."""
+    paths = get_sdk_paths()
+    python_exe = paths["python_exe"]
+    renpy_py = paths["renpy_py"]
+    
+    cmd = [python_exe, renpy_py, PROJECT_DIR, "test", test_suite]
+    mode_str = " (no-kill mode)" if no_kill else ""
+    print(f"[Runner] Starting Ren'Py tests for suite: '{test_suite}'{mode_str}")
+    print(f"[Runner] Command: {' '.join(cmd)}")
+    print("-" * 60)
+    
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+    
+    start_time = time.time()
+    timeout = 15.0  # 15 seconds safety timeout
+    
+    current_test = None
+    current_test_failed = False
+    any_test_failed = False
+    clean_termination = False
+    
+    try:
+        # Read stdout line by line
+        for line in iter(process.stdout.readline, ''):
+            stripped_line = line.strip()
+            
+            # Detect test start
+            start_match = re.match(r"^\[rpytest\]\s+\[exc\]\s+-\s+(\w+)\s*$", stripped_line)
+            if start_match:
+                current_test = start_match.group(1)
+                current_test_failed = False
+                
+            # Detect failure markers during active testcase
+            if current_test:
+                if any(marker in stripped_line for marker in ["AssertionError", "Full traceback:", "During testcase execution:", "==="]):
+                    current_test_failed = True
+                    any_test_failed = True
+                    
+            # Detect test end and append status
+            end_match = re.match(r"^\[rpytest\]\s+\[exc\]\s+-\s+(\w+)\s+\((\d+\.\d+)\s*s\)\s*$", stripped_line)
+            if end_match and current_test == end_match.group(1):
+                if current_test_failed:
+                    status_str = " \033[91m[FAILED]\033[0m"
+                else:
+                    status_str = " \033[92m[PASSED]\033[0m"
+                print(line.rstrip('\r\n') + status_str, flush=True)
+                current_test = None
+                current_test_failed = False
+            else:
+                print(line, end='', flush=True)
+            
+            if not no_kill:
+                # Watch for completion status signals in stdout
+                if "[rpytest] Status:" in line:
+                    if "FAILED" in line or "ERROR" in line:
+                        any_test_failed = True
+                    print("\n[Runner] Test execution completed. Terminating Ren'Py process...")
+                    clean_termination = True
+                    process.terminate()
+                    break
+                    
+                # Enforce safety timeout
+                if time.time() - start_time > timeout:
+                    print(f"\n[Runner] Timeout of {timeout}s reached. Terminating Ren'Py process...")
+                    process.terminate()
+                    any_test_failed = True
+                    break
+    except KeyboardInterrupt:
+        print("\n[Runner] Interrupted by user. Terminating process...")
+        process.terminate()
+    finally:
+        try:
+            process.kill()
+        except OSError:
+            pass
+        rc = process.wait()
+        print("-" * 60)
+        print("[Runner] Execution finished.")
+        if rc != 0 and not clean_termination:
+            any_test_failed = True
+        if any_test_failed:
+            sys.exit(1)
+
+def cmd_setup() -> None:
+    """Configures project settings (e.g., git hooks) and runs verification."""
+    print("=== Ren'Py Project Setup ===")
+    try:
+        subprocess.run(["git", "config", "core.hooksPath", ".githooks"], check=True)
+        print("[OK] Configured Git to use '.githooks/' directory for hooks.")
+    except Exception as e:
+        print(f"[ERROR] Failed to configure Git hooks path: {e}")
+        print("Please ensure Git is installed and you are inside the Git repository.")
+        sys.exit(1)
+        
+    print("\nRunning verification tests...")
+    cmd_verify()
+
+def print_help() -> None:
+    print("""Ren'Py CLI Runner Utility
+
+Usage:
+  python manage.py run                 Launch the game normally
+  python manage.py lint                Run Ren'Py built-in static analysis
+  python manage.py warp <scene:line>   Launch the game directly at a script line
+  python manage.py test [suite]        Run tests (default suite: global)
+                                       Options:
+                                         --no-kill  Keep the process alive for manual runs/validation
+  python manage.py verify              Verify paths, .env, and binary dependencies
+  python manage.py setup               Configure shared git hooks and verify the project environment
+""")
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print_help()
+        sys.exit(1)
+        
+    cmd = sys.argv[1].lower()
+    
+    if cmd == "verify":
+        cmd_verify()
+    elif cmd == "setup":
+        cmd_setup()
+    elif cmd == "run":
+        cmd_run()
+    elif cmd == "lint":
+        cmd_lint()
+    elif cmd == "warp":
+        if len(sys.argv) < 3:
+            print("[Error] Missing warp destination. Format: game/scripts/...:line")
+            sys.exit(1)
+        cmd_warp(sys.argv[2])
+    elif cmd == "test":
+        args = sys.argv[2:]
+        no_kill = False
+        if "--no-kill" in args:
+            no_kill = True
+            args.remove("--no-kill")
+        suite = args[0] if args else "global"
+        cmd_test(suite, no_kill=no_kill)
+    else:
+        print(f"[Error] Unknown command: '{cmd}'\n")
+        print_help()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
