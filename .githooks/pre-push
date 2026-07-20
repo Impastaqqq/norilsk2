@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# Get the directory of this script (which is inside .git/hooks)
+# and resolve the project root directory.
+PROJECT_DIR="$(git rev-parse --show-toplevel)"
+
+echo ""
+echo "========================================================"
+echo "⚡ Running Pre-Push Hooks (Lint & Tests) before push..."
+echo "========================================================"
+echo ""
+
+# Run linting
+echo "🔍 Running: python manage.py lint"
+python "$PROJECT_DIR/manage.py" lint
+LINT_EXIT=$?
+if [ $LINT_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ [Pre-Push Error] Ren'Py Lint failed with exit code $LINT_EXIT."
+    echo "❌ Git push has been aborted."
+    echo "💡 You can bypass this check in emergencies with: git push --no-verify"
+    echo "========================================================"
+    exit 1
+fi
+
+# Run tests
+echo "🧪 Running: python manage.py test global"
+python "$PROJECT_DIR/manage.py" test global
+TEST_EXIT=$?
+if [ $TEST_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ [Pre-Push Error] Unit tests failed with exit code $TEST_EXIT."
+    echo "❌ Git push has been aborted."
+    echo "💡 You can bypass this check in emergencies with: git push --no-verify"
+    echo "========================================================"
+    exit 1
+fi
+
+echo ""
+echo "✅ [Pre-Push Success] All checks passed! Proceeding to push..."
+echo "========================================================"
+echo ""
+exit 0

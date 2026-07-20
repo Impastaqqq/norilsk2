@@ -1,0 +1,70 @@
+name: Ren'Py CI Pipeline
+
+on:
+  push:
+    branches: 
+      - main
+      - 'release/**'
+      - 'VN-*'
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      RENPY_VERSION: "8.5.3"
+      RENPY_SDK: "${{ github.workspace }}/renpy-sdk"
+
+    steps:
+      # 1. Check out the project code WITHOUT LFS downloads
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: false # ONLY download code and exported assets, skip raw .kra binaries!
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. Cache the Ren'Py SDK
+      - name: Cache Ren'Py SDK
+        id: cache-renpy
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RENPY_SDK }}
+          key: renpy-sdk-${{ env.RENPY_VERSION }}
+
+      # 4. Download and extract Ren'Py SDK if not cached
+      - name: Download Ren'Py SDK
+        if: steps.cache-renpy.outputs.cache-hit != 'true'
+        run: |
+          wget -q https://www.renpy.org/dl/${{ env.RENPY_VERSION }}/renpy-${{ env.RENPY_VERSION }}-sdk.tar.bz2
+          tar -xjf renpy-${{ env.RENPY_VERSION }}-sdk.tar.bz2
+          mv renpy-${{ env.RENPY_VERSION }}-sdk ${{ env.RENPY_SDK }}
+          rm renpy-${{ env.RENPY_VERSION }}-sdk.tar.bz2
+
+      # 5. Install system dependencies required for headless GUI display execution
+      - name: Install Graphic Dependencies (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libegl1 libgl1 libsdl2-2.0-0
+
+      # 6. Verify environment configurations
+      - name: Run manage.py Verify
+        run: python manage.py verify
+
+      # 7. Run static analysis (lint)
+      - name: Run Ren'Py Lint
+        run: |
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" python manage.py lint
+
+      # 8. Run automated test suite
+      - name: Run Automated Tests
+        run: |
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" python manage.py test global

@@ -12,6 +12,9 @@
 /game/**/*.new
 /game/**/*.old
 
+# VSCode Ren'Py Warp library files
+vscode_renpy_warp_*.rpe*
+
 # Error, log, and output files.
 /errors.txt
 /files.txt
@@ -24,3 +27,20 @@
 /dialogue.tab
 /dialogue.txt
 /strings.json
+
+# IDE configs
+/.idea
+/.vscode
+
+# Temporary files
+lint_output.txt
+test_run.txt
+test_run_cmd.txt
+
+# Local environment variables
+.env
+/.env
+__pycache__
+/__pycache__
+*.pyc
+*.rpyc
