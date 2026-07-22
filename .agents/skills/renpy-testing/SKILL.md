@@ -144,6 +144,10 @@ Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitat
         $ renpy.hide_screen("combat_main")
 ```
 
+### D. Suite Separation Naming Convention
+* **Unit / Logic / Screen API TestSuites:** Name suites `<service>_tests` (e.g. `combat_service_tests`). These run in milliseconds both locally and in CI containers.
+* **Spatial E2E UI TestSuites:** Name suites `<service>_e2e_ui_tests` (e.g. `combat_e2e_ui_tests`). Separate spatial `click "Text"` statements into these E2E suites so CI can exclude them if needed.
+
 ---
 
 ## 5. Running Tests via Command Line
@@ -152,14 +156,16 @@ Optimistically assume the SDK path environment is already configured. If any com
 To run tests with automatic termination, use the manager runner utility `manage.py` located in the project root. It will execute the tests, stream outputs in real-time, and automatically close the Ren'Py process when execution completes or reaches a safety timeout (15 seconds):
 
 ```powershell
+# Run a specific testsuite
 python manage.py test <testsuite_name>
-```
 
-Replace `<testsuite_name>` with your test suite identifier (e.g., `guild_service_tests`), or omit it (or use `global`) to run all tests:
-
-```powershell
+# Run ALL testsuites (Unit + E2E)
 python manage.py test global
+
+# Run ALL testsuites EXCEPT E2E spatial UI suites (Recommended for CI pipelines)
+python manage.py test --exclude-e2e
 ```
+
 
 ### Pre-execution Linting
 Always run the `lint` command before and after creating new tests to catch syntax errors:

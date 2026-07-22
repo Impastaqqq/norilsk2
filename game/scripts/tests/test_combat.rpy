@@ -165,6 +165,8 @@ testsuite combat_service_tests:
             # Clean up screen state
             renpy.hide_screen("combat_main")
 
+
+testsuite combat_e2e_ui_tests:
     testcase test_e2e_combat_button_clicks:
         # 1. Start Combat & Render Screen
         $ test_service = CombatService()
@@ -192,6 +194,7 @@ testsuite combat_service_tests:
         $ assert test_service.show_hit_overlay, "Hit overlay should be active"
 
         $ renpy.hide_screen("combat_main")
+
 
 
 
