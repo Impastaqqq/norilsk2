@@ -182,3 +182,11 @@ If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file i
 ### Debug Prints
 You can use standard python `print()` inside setup or testcase blocks to trace states. These prints will output directly to the terminal when executing tests via the Python interpreter.
 
+### Headless CI Virtual Display Resolution (`Xvfb`)
+* **The Problem:** In headless Linux CI containers, `xvfb-run` creates a virtual frame buffer. If Xvfb is configured with a resolution smaller than the game's native UI resolution (e.g. `1280x720` vs native `1920x1080`), UI elements placed outside 720p bounds (such as `pos (40, 880)`) are clipped off-screen. Consequently, spatial E2E `click "Text"` statements fail to find bounding boxes and raise `RenpyTestTimeoutError`.
+* **Resolution:** Ensure the headless display buffer in CI matches the project's native screen resolution (`-screen 0 1920x1080x24`):
+  ```yaml
+  xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py test global
+  ```
+
+
