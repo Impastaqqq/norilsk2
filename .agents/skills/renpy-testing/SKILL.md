@@ -100,20 +100,72 @@ label test_rollback_behavior:
 
 ---
 
-## 4. Running Tests via Command Line
+## 4. End-to-End (E2E) UI Testing
+
+Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitates real user interactions (mouse clicks, timer delays, and screen actions) against live rendered screen displayables.
+
+### A. Screen Lifecycle & Mounting
+* **Mounting Screens:** Use `$ renpy.show_screen("screen_name", **kwargs)` or `action Show(...)` to mount screens into the display list for testing.
+* **Cleaning Up:** Always hide screens at the end of the testcase using `$ renpy.hide_screen("screen_name")` or `action Hide(...)`.
+* **Frame Delays (`pause`):** Always include `pause <seconds>` (e.g. `pause 0.2`) after mounting screens or triggering UI events. This allows Pygame mouse events, `timer` ticks, and visual transitions to render.
+
+### B. Simulating User Clicks & Assertions
+* **`click "Text"`**: Scans rendered screen displayables matching text `"Text"`, calculates exact screen bounding boxes, and fires Pygame `MOUSEBUTTONDOWN`/`MOUSEBUTTONUP` events.
+* **`$ assert condition`**: Evaluates Python state after screen event handlers process clicks.
+
+### C. Example E2E UI Test Pattern
+```renpy
+    testcase test_e2e_combat_button_clicks:
+        # 1. Mount screen & initialize state
+        $ test_service = CombatService()
+        $ test_service.start_combat(create_weapon_from_db("Knife"))
+        $ renpy.show_screen("combat_main", combat_service=test_service)
+        pause 0.2
+
+        # 2. Imitate User Action: Click screen button by matching rendered UI text
+        click "FIGHT (QTE)"
+        pause 0.2
+        $ assert test_service.qte_active, "QTE should be active after clicking FIGHT button"
+
+        # 3. Perform model/service logic during dynamic UI sequences
+        python:
+            while test_service.qte_active and test_service.current_stage <= test_service.total_stages:
+                for target in list(test_service.current_targets):
+                    test_service.click_target(target.target_id)
+
+        pause 0.2
+
+        # 4. Assert Damage Dealt & UI state
+        $ assert not test_service.qte_active, "QTE phase should complete"
+        $ assert test_service.enemy.current_hp == 30, "Damage should be evaluated on enemy"
+        $ assert test_service.show_hit_overlay, "Hit overlay should activate"
+
+        # 5. Clean up screen
+        $ renpy.hide_screen("combat_main")
+```
+
+### D. Suite Separation Naming Convention
+* **Unit / Logic / Screen API TestSuites:** Name suites `<service>_tests` (e.g. `combat_service_tests`). These run in milliseconds both locally and in CI containers.
+* **Spatial E2E UI TestSuites:** Name suites `<service>_e2e_ui_tests` (e.g. `combat_e2e_ui_tests`). Separate spatial `click "Text"` statements into these E2E suites so CI can exclude them if needed.
+
+---
+
+## 5. Running Tests via Command Line
 Optimistically assume the SDK path environment is already configured. If any command fails, run `python manage.py verify` to check configuration diagnostics.
 
 To run tests with automatic termination, use the manager runner utility `manage.py` located in the project root. It will execute the tests, stream outputs in real-time, and automatically close the Ren'Py process when execution completes or reaches a safety timeout (15 seconds):
 
 ```powershell
+# Run a specific testsuite
 python manage.py test <testsuite_name>
-```
 
-Replace `<testsuite_name>` with your test suite identifier (e.g., `guild_service_tests`), or omit it (or use `global`) to run all tests:
-
-```powershell
+# Run ALL testsuites (Unit + E2E)
 python manage.py test global
+
+# Run ALL testsuites EXCEPT E2E spatial UI suites (Recommended for CI pipelines)
+python manage.py test --exclude-e2e
 ```
+
 
 ### Pre-execution Linting
 Always run the `lint` command before and after creating new tests to catch syntax errors:
@@ -123,7 +175,7 @@ python manage.py lint
 
 ---
 
-## 5. Debugging & Gotchas
+## 6. Debugging & Gotchas
 
 ### Orphan Compiled Files (`.rpyc` / `.rpyc.bak`)
 If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file in the old location. 
@@ -135,3 +187,12 @@ If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file i
 
 ### Debug Prints
 You can use standard python `print()` inside setup or testcase blocks to trace states. These prints will output directly to the terminal when executing tests via the Python interpreter.
+
+### Headless CI Virtual Display Resolution (`Xvfb`)
+* **The Problem:** In headless Linux CI containers, `xvfb-run` creates a virtual frame buffer. If Xvfb is configured with a resolution smaller than the game's native UI resolution (e.g. `1280x720` vs native `1920x1080`), UI elements placed outside 720p bounds (such as `pos (40, 880)`) are clipped off-screen. Consequently, spatial E2E `click "Text"` statements fail to find bounding boxes and raise `RenpyTestTimeoutError`.
+* **Resolution:** Ensure the headless display buffer in CI matches the project's native screen resolution (`-screen 0 1920x1080x24`):
+  ```yaml
+  xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py test global
+  ```
+
+

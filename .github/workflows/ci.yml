@@ -62,9 +62,11 @@ jobs:
       # 7. Run static analysis (lint)
       - name: Run Ren'Py Lint
         run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" python manage.py lint
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py lint
 
-      # 8. Run automated test suite
+      # 8. Run automated test suite (excluding E2E spatial tests)
       - name: Run Automated Tests
         run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" python manage.py test global
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py test --exclude-e2e
+
+

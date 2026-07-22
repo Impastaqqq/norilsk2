@@ -141,8 +141,32 @@ def cmd_warp(warp_line: str) -> None:
     print(f"[Runner] Executing: {' '.join(cmd)}")
     subprocess.run(cmd)
 
-def cmd_test(test_suite: str = "global", no_kill: bool = False) -> None:
-    """Executes the test suite with timeout and auto-termination (unless no_kill is True)."""
+def discover_test_suites(exclude_e2e: bool = False) -> list[str]:
+    """Scans game/scripts/tests/ for defined testsuites."""
+    tests_dir = os.path.join(PROJECT_DIR, "game", "scripts", "tests")
+    suites = []
+    if os.path.exists(tests_dir):
+        suite_pattern = re.compile(r"testsuite\s+(\w+):")
+        for root, _, files in os.walk(tests_dir):
+            for file in files:
+                if file.endswith(".rpy") and not file.endswith(".rpyc"):
+                    file_path = os.path.join(root, file)
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        for line in f:
+                            m = suite_pattern.search(line)
+                            if m:
+                                suite_name = m.group(1)
+                                if suite_name not in suites:
+                                    suites.append(suite_name)
+    if exclude_e2e:
+        suites = [s for s in suites if "e2e" not in s.lower()]
+    return suites
+
+
+
+
+def cmd_test_single(test_suite: str, no_kill: bool = False) -> bool:
+    """Executes a single test suite with timeout and auto-termination. Returns True if passed."""
     paths = get_sdk_paths()
     python_exe = paths["python_exe"]
     renpy_py = paths["renpy_py"]
@@ -228,7 +252,24 @@ def cmd_test(test_suite: str = "global", no_kill: bool = False) -> None:
         print("[Runner] Execution finished.")
         if rc != 0 and not clean_termination:
             any_test_failed = True
-        if any_test_failed:
+            
+    return not any_test_failed
+
+def cmd_test(test_suite: str = "global", no_kill: bool = False, exclude_e2e: bool = False) -> None:
+    """Executes test suite(s). If exclude_e2e is True, discovers and runs all non-E2E testsuites."""
+    if exclude_e2e:
+        suites = discover_test_suites(exclude_e2e=True)
+        print(f"[Runner] Excluding E2E test suites. Discovered {len(suites)} non-E2E suite(s): {suites}")
+        overall_success = True
+        for suite in suites:
+            success = cmd_test_single(suite, no_kill=no_kill)
+            if not success:
+                overall_success = False
+        if not overall_success:
+            sys.exit(1)
+    else:
+        success = cmd_test_single(test_suite, no_kill=no_kill)
+        if not success:
             sys.exit(1)
 
 def cmd_setup() -> None:
@@ -254,7 +295,8 @@ Usage:
   python manage.py warp <scene:line>   Launch the game directly at a script line
   python manage.py test [suite]        Run tests (default suite: global)
                                        Options:
-                                         --no-kill  Keep the process alive for manual runs/validation
+                                         --exclude-e2e  Run all testsuites except E2E UI testsuites
+                                         --no-kill      Keep the process alive for manual runs/validation
   python manage.py verify              Verify paths, .env, and binary dependencies
   python manage.py setup               Configure shared git hooks and verify the project environment
 """)
@@ -282,11 +324,15 @@ def main() -> None:
     elif cmd == "test":
         args = sys.argv[2:]
         no_kill = False
+        exclude_e2e = False
         if "--no-kill" in args:
             no_kill = True
             args.remove("--no-kill")
+        if "--exclude-e2e" in args:
+            exclude_e2e = True
+            args.remove("--exclude-e2e")
         suite = args[0] if args else "global"
-        cmd_test(suite, no_kill=no_kill)
+        cmd_test(suite, no_kill=no_kill, exclude_e2e=exclude_e2e)
     else:
         print(f"[Error] Unknown command: '{cmd}'\n")
         print_help()
@@ -294,3 +340,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -2,6 +2,14 @@
 
 label start:
 
+    if config.developer:
+        menu:
+            "=== DEVELOPER MODE ROUTER (Visible in Dev Mode Only) ==="
+            "Start Main Story (Day 1)":
+                pass
+            "Test Combat Prototype":
+                jump combat_test_scene
+
     scene black
 
     pause 1.0
