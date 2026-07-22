@@ -100,7 +100,53 @@ label test_rollback_behavior:
 
 ---
 
-## 4. Running Tests via Command Line
+## 4. End-to-End (E2E) UI Testing
+
+Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitates real user interactions (mouse clicks, timer delays, and screen actions) against live rendered screen displayables.
+
+### A. Screen Lifecycle & Mounting
+* **Mounting Screens:** Use `$ renpy.show_screen("screen_name", **kwargs)` or `action Show(...)` to mount screens into the display list for testing.
+* **Cleaning Up:** Always hide screens at the end of the testcase using `$ renpy.hide_screen("screen_name")` or `action Hide(...)`.
+* **Frame Delays (`pause`):** Always include `pause <seconds>` (e.g. `pause 0.2`) after mounting screens or triggering UI events. This allows Pygame mouse events, `timer` ticks, and visual transitions to render.
+
+### B. Simulating User Clicks & Assertions
+* **`click "Text"`**: Scans rendered screen displayables matching text `"Text"`, calculates exact screen bounding boxes, and fires Pygame `MOUSEBUTTONDOWN`/`MOUSEBUTTONUP` events.
+* **`$ assert condition`**: Evaluates Python state after screen event handlers process clicks.
+
+### C. Example E2E UI Test Pattern
+```renpy
+    testcase test_e2e_combat_button_clicks:
+        # 1. Mount screen & initialize state
+        $ test_service = CombatService()
+        $ test_service.start_combat(create_weapon_from_db("Knife"))
+        $ renpy.show_screen("combat_main", combat_service=test_service)
+        pause 0.2
+
+        # 2. Imitate User Action: Click screen button by matching rendered UI text
+        click "FIGHT (QTE)"
+        pause 0.2
+        $ assert test_service.qte_active, "QTE should be active after clicking FIGHT button"
+
+        # 3. Perform model/service logic during dynamic UI sequences
+        python:
+            while test_service.qte_active and test_service.current_stage <= test_service.total_stages:
+                for target in list(test_service.current_targets):
+                    test_service.click_target(target.target_id)
+
+        pause 0.2
+
+        # 4. Assert Damage Dealt & UI state
+        $ assert not test_service.qte_active, "QTE phase should complete"
+        $ assert test_service.enemy.current_hp == 30, "Damage should be evaluated on enemy"
+        $ assert test_service.show_hit_overlay, "Hit overlay should activate"
+
+        # 5. Clean up screen
+        $ renpy.hide_screen("combat_main")
+```
+
+---
+
+## 5. Running Tests via Command Line
 Optimistically assume the SDK path environment is already configured. If any command fails, run `python manage.py verify` to check configuration diagnostics.
 
 To run tests with automatic termination, use the manager runner utility `manage.py` located in the project root. It will execute the tests, stream outputs in real-time, and automatically close the Ren'Py process when execution completes or reaches a safety timeout (15 seconds):
@@ -123,7 +169,7 @@ python manage.py lint
 
 ---
 
-## 5. Debugging & Gotchas
+## 6. Debugging & Gotchas
 
 ### Orphan Compiled Files (`.rpyc` / `.rpyc.bak`)
 If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file in the old location. 
@@ -135,3 +181,4 @@ If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file i
 
 ### Debug Prints
 You can use standard python `print()` inside setup or testcase blocks to trace states. These prints will output directly to the terminal when executing tests via the Python interpreter.
+

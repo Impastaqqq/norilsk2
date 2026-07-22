@@ -132,3 +132,68 @@ testsuite combat_service_tests:
             assert chainsaw.weapon_type == WeaponType.SLASHING, f"Expected SLASHING type, got {chainsaw.weapon_type}"
             assert chainsaw.min_damage == 50, f"Expected 50 min damage, got {chainsaw.min_damage}"
 
+    testcase test_combat_screen_ui_flow:
+        python:
+            # 1. Combat Start: Instantiate CombatService & start combat
+            service = CombatService()
+            knife = create_weapon_from_db("Knife")
+            service.start_combat(knife)
+
+            # Show screen and verify combat start state
+            renpy.show_screen("combat_main", combat_service=service)
+            assert service.enemy.current_hp == 50, f"Expected initial enemy HP to be 50, got {service.enemy.current_hp}"
+            assert not service.qte_active, "QTE should initially be inactive"
+
+            # 2. Start QTE Phase (Simulating 'FIGHT (QTE)' action button click)
+            service.start_qte_phase()
+            assert service.qte_active, "QTE phase should be active after pressing FIGHT"
+            assert service.current_stage == 1, f"Expected Stage 1, got {service.current_stage}"
+
+            # 3. Press all QTE events across all stages (Stage 1 & Stage 2)
+            while service.qte_active and service.current_stage <= service.total_stages:
+                targets = list(service.current_targets)
+                assert len(targets) > 0, "Current targets list should not be empty during QTE phase"
+                for target in targets:
+                    service.click_target(target.target_id)
+
+            # 4. Damage Dealt verification
+            assert not service.qte_active, "QTE phase should finish after pressing all target buttons"
+            assert service.enemy.current_hp < 50, f"Enemy HP should decrease after successful QTE combo, got {service.enemy.current_hp}"
+            assert service.enemy.current_hp == 30, f"Expected 30 HP remaining (20 damage dealt), got {service.enemy.current_hp}"
+            assert service.show_hit_overlay, "Hit overlay should be active on enemy after taking damage"
+
+            # Clean up screen state
+            renpy.hide_screen("combat_main")
+
+    testcase test_e2e_combat_button_clicks:
+        # 1. Start Combat & Render Screen
+        $ test_service = CombatService()
+        $ test_service.start_combat(create_weapon_from_db("Knife"))
+        $ renpy.show_screen("combat_main", combat_service=test_service)
+        pause 0.2
+
+        # 2. Imitate User Action: Click "FIGHT (QTE)" screen button by matching rendered UI text
+        click "FIGHT (QTE)"
+        pause 0.2
+        $ assert test_service.qte_active, "QTE should be active after clicking FIGHT (QTE) button"
+
+        # 3. Imitate User Actions: Click QTE target buttons
+        python:
+            while test_service.qte_active and test_service.current_stage <= test_service.total_stages:
+                targets = list(test_service.current_targets)
+                for target in targets:
+                    test_service.click_target(target.target_id)
+
+        pause 0.2
+
+        # 4. Assert Damage Dealt & UI state after E2E UI clicks
+        $ assert not test_service.qte_active, "QTE should finish"
+        $ assert test_service.enemy.current_hp == 30, f"Expected 30 HP remaining, got {test_service.enemy.current_hp}"
+        $ assert test_service.show_hit_overlay, "Hit overlay should be active"
+
+        $ renpy.hide_screen("combat_main")
+
+
+
+
+
