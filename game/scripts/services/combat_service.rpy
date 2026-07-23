@@ -23,6 +23,7 @@ init -1 python:
             self.hit_overlay_timer: float = 0.0
 
             self.show_log: bool = True
+            self.disable_auto_timer: bool = False
 
         def start_combat(self, weapon: Optional[WeaponData] = None, enemy_type: str = EnemyType.SMALL_TENDRIL) -> None:
             if weapon:
