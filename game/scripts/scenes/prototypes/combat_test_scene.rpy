@@ -9,5 +9,4 @@ label combat_test_scene:
         combat_service.start_combat()
 
     call screen combat_main(combat_service)
-
     return
