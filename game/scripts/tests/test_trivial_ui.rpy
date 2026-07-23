@@ -31,6 +31,21 @@ testsuite trivial_e2e_ui_tests:
         $ renpy.hide_screen("main_menu")
         $ renpy.show_screen("test_trivial_screen")
         pause 0.2
+        python:
+            import sys
+            import renpy.test.testfocus as testfocus
+            import renpy.display.focus as focus_mod
+            
+            f_item = testfocus.find_focus("Test Button", False)
+            print(f"[DIAGNOSTIC] find_focus('Test Button'): {f_item}", flush=True)
+            print(f"[DIAGNOSTIC] focus_list length: {len(focus_mod.focus_list)}", flush=True)
+            for idx, f in enumerate(focus_mod.focus_list):
+                try:
+                    w_text = f.widget._tts_all(False) if f.widget else "NoWidget"
+                    print(f"[DIAGNOSTIC] focus[{idx}]: widget={f.widget}, text='{w_text}'", flush=True)
+                except Exception as ex:
+                    print(f"[DIAGNOSTIC] focus[{idx}] error: {ex}", flush=True)
+            sys.stdout.flush()
         click "Test Button"
         pause 0.2
         $ renpy.hide_screen("test_trivial_screen")
