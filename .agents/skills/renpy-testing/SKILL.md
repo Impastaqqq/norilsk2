@@ -209,7 +209,4 @@ You can use standard python `print()` inside setup or testcase blocks to trace s
          run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24 +extension GLX +render -noreset" python manage.py test global
      ```
   2. Add `pause 0.01` at the end of pure python `testcase` definitions. This forces a frame tick, resetting Ren'Py's internal `last_state_change` node timer back to 0 between testcases.
-
-
-
-
+  3. Configure `_test.timeout = 15.0` in the `setup:` block of spatial E2E UI testsuites to prevent slower shared CI container runners from exceeding Ren'Py's default 5.0s per-statement timeout during mouse animation and rendering ticks.

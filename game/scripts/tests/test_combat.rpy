@@ -176,6 +176,11 @@ testsuite combat_service_tests:
 
 
 testsuite combat_e2e_ui_tests:
+    setup:
+        python:
+            from renpy.test.testsettings import _test
+            _test.timeout = 15.0
+
     testcase test_e2e_combat_button_clicks:
         # 1. Start Combat & Render Screen
         $ test_service = CombatService()
