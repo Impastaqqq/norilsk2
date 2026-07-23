@@ -74,5 +74,27 @@ jobs:
         run: |
           xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24 +extension GLX +render -noreset" python manage.py test global --timeout 60
 
+      # 9. Dump error logs if tests fail
+      - name: Display Error Logs on Failure
+        if: failure()
+        run: |
+          echo "=== RENPY ERRORS.TXT ==="
+          cat errors.txt 2>/dev/null || true
+          echo "=== RENPY TRACEBACK.TXT ==="
+          cat traceback.txt 2>/dev/null || true
+          echo "=== RENPY LOG.TXT (LAST 100 LINES) ==="
+          tail -n 100 log.txt 2>/dev/null || true
+
+      # 10. Upload test logs artifact on failure
+      - name: Upload Ren'Py Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renpy-ci-logs
+          path: |
+            log.txt
+            traceback.txt
+            errors.txt
+
 
 
