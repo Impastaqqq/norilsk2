@@ -25,8 +25,11 @@ testsuite trivial_e2e_ui_tests:
             pass
 
     testcase test_trivial_click:
+        # Clear main menu enter transition and background screen to prevent focus delay
+        $ renpy.transition(None)
+        $ renpy.hide_screen("main_menu")
         $ renpy.show_screen("test_trivial_screen")
-        pause 0.5
+        pause 0.2
         python:
             import renpy.test.testfocus as testfocus
             import renpy.display.focus as focus_mod

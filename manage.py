@@ -328,6 +328,44 @@ def cmd_setup() -> None:
     print("\nRunning verification tests...")
     cmd_verify()
 
+def cmd_ci_status(watch: bool = False) -> None:
+    """Queries GitHub Actions REST API for recent workflow runs."""
+    import urllib.request
+    import json
+    
+    url = "https://api.github.com/repos/Impastaqqq/norilsk2/actions/runs"
+    print("=== GitHub Actions CI Status ===")
+    
+    while True:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                runs = data.get("workflow_runs", [])
+                if not runs:
+                    print("No workflow runs found.")
+                    return
+                
+                latest = runs[0]
+                run_id = latest.get("id")
+                status = latest.get("status")
+                conclusion = latest.get("conclusion")
+                branch = latest.get("head_branch")
+                commit_msg = latest.get("head_commit", {}).get("message", "").split("\n")[0]
+                
+                print(f"[CI] Latest Run #{run_id} (Branch: '{branch}')")
+                print(f"     Commit: '{commit_msg}'")
+                print(f"     Status: {status} | Conclusion: {conclusion}")
+                
+                if not watch or status == "completed":
+                    break
+                
+                print("     [Watching] Waiting 10s for workflow run to complete...")
+                time.sleep(10)
+        except Exception as e:
+            print(f"[ERROR] Failed to query GitHub Actions API: {e}")
+            break
+
 def print_help() -> None:
     print("""Ren'Py CLI Runner Utility
 
@@ -343,6 +381,7 @@ Usage:
                                          --timeout <sec>  Set safety timeout in seconds (default: 30.0)
   python manage.py verify              Verify paths, .env, and binary dependencies
   python manage.py setup               Configure shared git hooks and verify the project environment
+  python manage.py ci-status [--watch] Query status of GitHub Actions workflow runs
 """)
 
 def main() -> None:
@@ -401,6 +440,10 @@ def main() -> None:
                     
         suite = args[0] if args else "global"
         cmd_test(suite, no_kill=no_kill, exclude_e2e=exclude_e2e, timeout=timeout)
+    elif cmd == "ci-status":
+        args = sys.argv[2:]
+        watch = "--watch" in args or "-w" in args
+        cmd_ci_status(watch=watch)
     else:
         print(f"[Error] Unknown command: '{cmd}'\n")
         print_help()
