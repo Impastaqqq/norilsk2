@@ -18,6 +18,9 @@ jobs:
     env:
       RENPY_VERSION: "8.5.3"
       RENPY_SDK: "${{ github.workspace }}/renpy-sdk"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      SDL_AUDIODRIVER: "dummy"
+      RENPY_SOUND: "dummy"
 
     steps:
       # 1. Check out the project code WITHOUT LFS downloads
@@ -50,10 +53,10 @@ jobs:
           rm renpy-${{ env.RENPY_VERSION }}-sdk.tar.bz2
 
       # 5. Install system dependencies required for headless GUI display execution
-      - name: Install Graphic Dependencies (Xvfb)
+      - name: Install Graphic Dependencies (Xvfb & Mesa Software Rendering)
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libegl1 libgl1 libsdl2-2.0-0
+          sudo apt-get install -y xvfb libegl1 libgl1 libgl1-mesa-dri libglx-mesa0 mesa-utils libsdl2-2.0-0
 
       # 6. Verify environment configurations
       - name: Run manage.py Verify
@@ -62,11 +65,12 @@ jobs:
       # 7. Run static analysis (lint)
       - name: Run Ren'Py Lint
         run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py lint
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24 +extension GLX +render -noreset" python manage.py lint
 
-      # 8. Run automated test suite (excluding E2E spatial tests)
-      - name: Run Automated Tests
+      # 8. Run automated test suite (including E2E spatial tests)
+      - name: Run Automated Tests (Global Suite)
         run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py test --exclude-e2e
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24 +extension GLX +render -noreset" python manage.py test global --timeout 60
+
 
 

@@ -165,7 +165,7 @@ def discover_test_suites(exclude_e2e: bool = False) -> list[str]:
 
 
 
-def cmd_test_single(test_suite: str, no_kill: bool = False) -> bool:
+def cmd_test_single(test_suite: str, no_kill: bool = False, timeout: float = 30.0) -> bool:
     """Executes a single test suite with timeout and auto-termination. Returns True if passed."""
     paths = get_sdk_paths()
     python_exe = paths["python_exe"]
@@ -173,7 +173,7 @@ def cmd_test_single(test_suite: str, no_kill: bool = False) -> bool:
     
     cmd = [python_exe, renpy_py, PROJECT_DIR, "test", test_suite]
     mode_str = " (no-kill mode)" if no_kill else ""
-    print(f"[Runner] Starting Ren'Py tests for suite: '{test_suite}'{mode_str}")
+    print(f"[Runner] Starting Ren'Py tests for suite: '{test_suite}' (timeout: {timeout}s){mode_str}")
     print(f"[Runner] Command: {' '.join(cmd)}")
     print("-" * 60)
     
@@ -186,7 +186,6 @@ def cmd_test_single(test_suite: str, no_kill: bool = False) -> bool:
     )
     
     start_time = time.time()
-    timeout = 15.0  # 15 seconds safety timeout
     
     current_test = None
     current_test_failed = False
@@ -255,22 +254,65 @@ def cmd_test_single(test_suite: str, no_kill: bool = False) -> bool:
             
     return not any_test_failed
 
-def cmd_test(test_suite: str = "global", no_kill: bool = False, exclude_e2e: bool = False) -> None:
+def cmd_test(test_suite: str = "global", no_kill: bool = False, exclude_e2e: bool = False, timeout: float = 30.0) -> None:
     """Executes test suite(s). If exclude_e2e is True, discovers and runs all non-E2E testsuites."""
     if exclude_e2e:
         suites = discover_test_suites(exclude_e2e=True)
         print(f"[Runner] Excluding E2E test suites. Discovered {len(suites)} non-E2E suite(s): {suites}")
         overall_success = True
         for suite in suites:
-            success = cmd_test_single(suite, no_kill=no_kill)
+            success = cmd_test_single(suite, no_kill=no_kill, timeout=timeout)
             if not success:
                 overall_success = False
         if not overall_success:
             sys.exit(1)
     else:
-        success = cmd_test_single(test_suite, no_kill=no_kill)
+        success = cmd_test_single(test_suite, no_kill=no_kill, timeout=timeout)
         if not success:
             sys.exit(1)
+
+def cmd_clean(verbose: bool = False) -> None:
+    """Removes compiled Ren'Py and Python files from the project directory."""
+    clean_extensions = {".rpyc", ".rpymc", ".rpyb", ".pyc", ".pyo"}
+    ignore_dirs = {".git", ".venv", "venv", ".idea", ".vscode"}
+    
+    print("=== Ren'Py Compiled Files Cleanup ===")
+    deleted_count = 0
+    total_bytes_freed = 0
+    deleted_by_ext: dict[str, int] = {}
+    
+    for root, dirs, files in os.walk(PROJECT_DIR):
+        dirs[:] = [d for d in dirs if d not in ignore_dirs]
+        for file in files:
+            _, ext = os.path.splitext(file)
+            ext_lower = ext.lower()
+            if ext_lower in clean_extensions:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, PROJECT_DIR)
+                try:
+                    file_size = os.path.getsize(file_path)
+                    os.remove(file_path)
+                    deleted_count += 1
+                    total_bytes_freed += file_size
+                    deleted_by_ext[ext_lower] = deleted_by_ext.get(ext_lower, 0) + 1
+                    if verbose:
+                        print(f"[Clean] Removed: {rel_path}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to remove {rel_path}: {e}")
+
+    print("\n=== Cleanup Summary ===")
+    print(f"Total files deleted: {deleted_count}")
+    if deleted_by_ext:
+        ext_summary = ", ".join(f"{ext}: {count}" for ext, count in sorted(deleted_by_ext.items()))
+        print(f"Breakdown by extension: {ext_summary}")
+    
+    if total_bytes_freed >= 1024 * 1024:
+        size_str = f"{total_bytes_freed / (1024 * 1024):.2f} MB"
+    elif total_bytes_freed >= 1024:
+        size_str = f"{total_bytes_freed / 1024:.2f} KB"
+    else:
+        size_str = f"{total_bytes_freed} Bytes"
+    print(f"Total space freed: {size_str}")
 
 def cmd_setup() -> None:
     """Configures project settings (e.g., git hooks) and runs verification."""
@@ -292,11 +334,13 @@ def print_help() -> None:
 Usage:
   python manage.py run                 Launch the game normally
   python manage.py lint                Run Ren'Py built-in static analysis
+  python manage.py clean [-v|--verbose] Clean compiled Ren'Py (*.rpyc) and Python files
   python manage.py warp <scene:line>   Launch the game directly at a script line
   python manage.py test [suite]        Run tests (default suite: global)
                                        Options:
-                                         --exclude-e2e  Run all testsuites except E2E UI testsuites
-                                         --no-kill      Keep the process alive for manual runs/validation
+                                         --exclude-e2e    Run all testsuites except E2E UI testsuites
+                                         --no-kill        Keep the process alive for manual runs/validation
+                                         --timeout <sec>  Set safety timeout in seconds (default: 30.0)
   python manage.py verify              Verify paths, .env, and binary dependencies
   python manage.py setup               Configure shared git hooks and verify the project environment
 """)
@@ -314,6 +358,10 @@ def main() -> None:
         cmd_setup()
     elif cmd == "run":
         cmd_run()
+    elif cmd == "clean":
+        args = sys.argv[2:]
+        verbose = "-v" in args or "--verbose" in args
+        cmd_clean(verbose=verbose)
     elif cmd == "lint":
         cmd_lint()
     elif cmd == "warp":
@@ -325,14 +373,34 @@ def main() -> None:
         args = sys.argv[2:]
         no_kill = False
         exclude_e2e = False
+        timeout = 30.0
+        
         if "--no-kill" in args:
             no_kill = True
             args.remove("--no-kill")
         if "--exclude-e2e" in args:
             exclude_e2e = True
             args.remove("--exclude-e2e")
+            
+        # Parse --timeout option
+        for arg in list(args):
+            if arg.startswith("--timeout="):
+                try:
+                    timeout = float(arg.split("=", 1)[1])
+                    args.remove(arg)
+                except ValueError:
+                    pass
+            elif arg == "--timeout" and args.index(arg) + 1 < len(args):
+                idx = args.index(arg)
+                try:
+                    timeout = float(args[idx + 1])
+                    args.pop(idx + 1)
+                    args.pop(idx)
+                except ValueError:
+                    pass
+                    
         suite = args[0] if args else "global"
-        cmd_test(suite, no_kill=no_kill, exclude_e2e=exclude_e2e)
+        cmd_test(suite, no_kill=no_kill, exclude_e2e=exclude_e2e, timeout=timeout)
     else:
         print(f"[Error] Unknown command: '{cmd}'\n")
         print_help()

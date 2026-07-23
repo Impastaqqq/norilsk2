@@ -188,11 +188,28 @@ If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file i
 ### Debug Prints
 You can use standard python `print()` inside setup or testcase blocks to trace states. These prints will output directly to the terminal when executing tests via the Python interpreter.
 
-### Headless CI Virtual Display Resolution (`Xvfb`)
-* **The Problem:** In headless Linux CI containers, `xvfb-run` creates a virtual frame buffer. If Xvfb is configured with a resolution smaller than the game's native UI resolution (e.g. `1280x720` vs native `1920x1080`), UI elements placed outside 720p bounds (such as `pos (40, 880)`) are clipped off-screen. Consequently, spatial E2E `click "Text"` statements fail to find bounding boxes and raise `RenpyTestTimeoutError`.
-* **Resolution:** Ensure the headless display buffer in CI matches the project's native screen resolution (`-screen 0 1920x1080x24`):
-  ```yaml
-  xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py test global
-  ```
+### Headless CI Virtual Display & Graphic Environment (`Xvfb` + Mesa Software GL)
+* **The Problem:** In headless Linux CI containers, `xvfb-run` creates a virtual frame buffer without a physical GPU. Standard Xvfb setups may experience two issues:
+  1. **Resolution Clipping:** If Xvfb resolution is smaller than native `1920x1080`, UI elements outside smaller bounds (e.g. `pos (40, 880)`) are clipped off-screen, causing spatial E2E `click "Text"` to timeout with `RenpyTestTimeoutError`.
+  2. **OpenGL / Audio Drivers:** Missing Mesa DRI software rasterizers (`libgl1-mesa-dri`, `libglx-mesa0`) or unhandled SDL audio initialization can block display context creation or hang engine startup.
+  3. **Accumulated Node Timeouts:** Pure `python:` testcases do not trigger GUI display updates. Running many pure python testcases sequentially in a single suite without screen pauses can cause Ren'Py's test executor node timer (`last_state_change`) to accumulate time across testcases and hit the 5.0-second safety timeout.
+* **Resolution:** 
+  1. Configure the graphic environment with Mesa DRI drivers, dummy audio, and explicit 1080p GLX server args in CI workflows:
+     ```yaml
+     env:
+       LIBGL_ALWAYS_SOFTWARE: "1"
+       SDL_AUDIODRIVER: "dummy"
+       RENPY_SOUND: "dummy"
+
+     steps:
+       - name: Install Graphic Dependencies
+         run: sudo apt-get install -y xvfb libegl1 libgl1 libgl1-mesa-dri libglx-mesa0 mesa-utils libsdl2-2.0-0
+
+       - name: Run Automated Tests
+         run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24 +extension GLX +render -noreset" python manage.py test global
+     ```
+  2. Add `pause 0.01` at the end of pure python `testcase` definitions. This forces a frame tick, resetting Ren'Py's internal `last_state_change` node timer back to 0 between testcases.
+
+
 
 
