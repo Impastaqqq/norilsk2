@@ -188,8 +188,8 @@ testsuite combat_e2e_ui_tests:
         $ renpy.show_screen("combat_main", combat_service=test_service)
         pause 0.2
 
-        # 2. Imitate User Action: Click "FIGHT (QTE)" screen button by matching rendered UI text
-        click "FIGHT (QTE)"
+        # 2. Imitate User Action: Click "FIGHT (QTE)" screen button by widget ID
+        click id "btn_fight_qte"
         pause 0.2
         $ assert test_service.qte_active, "QTE should be active after clicking FIGHT (QTE) button"
 

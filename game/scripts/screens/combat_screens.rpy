@@ -59,6 +59,7 @@ screen combat_main(combat_service):
         hbox:
             spacing 15
             button:
+                id "btn_fight_qte"
                 action Function(combat_service.start_qte_phase)
                 sensitive (not combat_service.qte_active and combat_service.enemy.current_hp > 0 and combat_service.player.hp > 0)
                 padding (20, 12)
