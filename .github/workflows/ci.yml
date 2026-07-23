@@ -6,6 +6,7 @@ on:
       - main
       - 'release/**'
       - 'VN-*'
+      - 'n-*'
   pull_request:
     branches:
       - main
