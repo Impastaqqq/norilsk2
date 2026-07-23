@@ -184,7 +184,6 @@ testsuite combat_e2e_ui_tests:
     testcase test_e2e_combat_button_clicks:
         # 1. Start Combat & Render Screen
         $ test_service = CombatService()
-        $ test_service.disable_auto_timer = True
         $ test_service.start_combat(create_weapon_from_db("Knife"))
         $ renpy.show_screen("combat_main", combat_service=test_service)
         pause 0.2

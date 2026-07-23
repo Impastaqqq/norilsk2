@@ -5,9 +5,8 @@ screen combat_main(combat_service):
     default combat_log_adj = ui.adjustment()
     default last_log_len = 0
 
-    # Continuous timer tick for QTE countdown & 1s hit overlay decay (disabled during tests via disable_auto_timer)
-    if not getattr(combat_service, "disable_auto_timer", False):
-        timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)
+    # Continuous timer tick for QTE countdown & 1s hit overlay decay
+    timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)
 
     # Auto-scroll log viewport when new entries are added
     if len(combat_service.log.entries) != last_log_len:
