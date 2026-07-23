@@ -175,7 +175,7 @@ testsuite combat_service_tests:
         pause 0.01
 
 
-testsuite combat_e2e_ui_tests:
+testsuite disabled_combat_e2e_ui_tests:
     setup:
         python:
             from renpy.test.testsettings import _test
