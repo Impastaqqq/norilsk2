@@ -1,6 +1,7 @@
 # game/scripts/screens/combat_screens.rpy
 
 screen combat_main(combat_service):
+    modal True
     default combat_log_adj = ui.adjustment()
     default last_log_len = 0
 
@@ -58,14 +59,14 @@ screen combat_main(combat_service):
         padding (20, 15)
         hbox:
             spacing 15
-            button:
+            textbutton "FIGHT (QTE)":
                 action Function(combat_service.start_qte_phase)
                 sensitive (not combat_service.qte_active and combat_service.enemy.current_hp > 0 and combat_service.player.hp > 0)
                 padding (20, 12)
                 background "#2b580c"
                 hover_background "#3e7e11"
                 insensitive_background "#1c2616"
-                text "FIGHT (QTE)" size 16 bold True color "#ffffff"
+                text_size 16 text_bold True text_color "#ffffff"
 
             button:
                 action Function(combat_service.heal_player)

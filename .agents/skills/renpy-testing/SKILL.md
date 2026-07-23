@@ -104,10 +104,13 @@ label test_rollback_behavior:
 
 Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitates real user interactions (mouse clicks, timer delays, and screen actions) against live rendered screen displayables.
 
-### A. Screen Lifecycle & Mounting
+### A. Screen Lifecycle & Focus List Rebuilding (`$ renpy.restart_interaction()`)
 * **Mounting Screens:** Use `$ renpy.show_screen("screen_name", **kwargs)` or `action Show(...)` to mount screens into the display list for testing.
-* **Cleaning Up:** Always hide screens at the end of the testcase using `$ renpy.hide_screen("screen_name")` or `action Hide(...)`.
-* **Frame Delays (`pause`):** Always include `pause <seconds>` (e.g. `pause 0.2`) after mounting screens or triggering UI events. This allows Pygame mouse events, `timer` ticks, and visual transitions to render.
+* **CRITICAL - Rebuilding Focus List:** Always call `$ renpy.restart_interaction()` immediately after `$ renpy.show_screen(...)`. 
+  - *Why:* In headless Linux Xvfb CI containers (and background menu loops), `$ renpy.show_screen()` queues screen dirty states, but `focus_list` remains populated with previous screen targets until an interaction cycle occurs. `$ renpy.restart_interaction()` forces Ren'Py's display engine to rebuild `focus_list` on frame 1, allowing `click "Text"` and `find_focus()` to resolve target hitboxes instantly.
+* **Bypassing Menu Transition Delays:** At the start of an E2E testcase, execute `$ renpy.transition(None)` and `$ renpy.hide_screen("main_menu")` to cancel ongoing menu enter transitions (`config.enter_transition = dissolve`) that block focus recalculation.
+* **Cleaning Up:** Always hide screens at the end of the testcase using `$ renpy.hide_screen("screen_name")`.
+* **Frame Delays (`pause`):** Include `pause <seconds>` (e.g. `pause 0.2`) after mounting screens or triggering UI events.
 
 ### B. Simulating User Clicks & Assertions
 * **`click "Text"`**: Scans rendered screen displayables matching text `"Text"`, calculates exact screen bounding boxes, and fires Pygame `MOUSEBUTTONDOWN`/`MOUSEBUTTONUP` events.
@@ -116,10 +119,13 @@ Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitat
 ### C. Example E2E UI Test Pattern
 ```renpy
     testcase test_e2e_combat_button_clicks:
-        # 1. Mount screen & initialize state
+        # 1. Clear background transitions and mount screen
+        $ renpy.transition(None)
+        $ renpy.hide_screen("main_menu")
         $ test_service = CombatService()
         $ test_service.start_combat(create_weapon_from_db("Knife"))
         $ renpy.show_screen("combat_main", combat_service=test_service)
+        $ renpy.restart_interaction()
         pause 0.2
 
         # 2. Imitate User Action: Click screen button by matching rendered UI text
@@ -127,20 +133,7 @@ Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitat
         pause 0.2
         $ assert test_service.qte_active, "QTE should be active after clicking FIGHT button"
 
-        # 3. Perform model/service logic during dynamic UI sequences
-        python:
-            while test_service.qte_active and test_service.current_stage <= test_service.total_stages:
-                for target in list(test_service.current_targets):
-                    test_service.click_target(target.target_id)
-
-        pause 0.2
-
-        # 4. Assert Damage Dealt & UI state
-        $ assert not test_service.qte_active, "QTE phase should complete"
-        $ assert test_service.enemy.current_hp == 30, "Damage should be evaluated on enemy"
-        $ assert test_service.show_hit_overlay, "Hit overlay should activate"
-
-        # 5. Clean up screen
+        # 3. Clean up screen
         $ renpy.hide_screen("combat_main")
 ```
 
@@ -150,10 +143,9 @@ Ren'Py includes a built-in GUI Test Automation engine (`renpy.test`) that imitat
 
 ---
 
-## 5. Running Tests via Command Line
-Optimistically assume the SDK path environment is already configured. If any command fails, run `python manage.py verify` to check configuration diagnostics.
+## 5. Running Tests & Automated CI Status
 
-To run tests with automatic termination, use the manager runner utility `manage.py` located in the project root. It will execute the tests, stream outputs in real-time, and automatically close the Ren'Py process when execution completes or reaches a safety timeout (15 seconds):
+To run tests with automatic process termination, use the manager utility `manage.py` located in the project root:
 
 ```powershell
 # Run a specific testsuite
@@ -164,8 +156,10 @@ python manage.py test global
 
 # Run ALL testsuites EXCEPT E2E spatial UI suites (Recommended for CI pipelines)
 python manage.py test --exclude-e2e
-```
 
+# Query GitHub Actions CI workflow status (automatically fetches & dumps logs on failure)
+python manage.py ci-status [--watch]
+```
 
 ### Pre-execution Linting
 Always run the `lint` command before and after creating new tests to catch syntax errors:
@@ -177,22 +171,26 @@ python manage.py lint
 
 ## 6. Debugging & Gotchas
 
+### Ren'Py TestSuite Discovery & Disabling Rule
+* **Discovery Rule:** Ren'Py's test parser scans all `.rpy` files and registers any block starting with `testsuite <name>:`.
+* **Gotcha:** Renaming a testsuite block (e.g. `disabled_combat_e2e_ui_tests:`) **does NOT skip or disable it**! Ren'Py executes all `testsuite` blocks regardless of name prefix.
+* **Resolution:** To disable/skip a testsuite block, you **must comment it out** using `#`.
+
+### Output Stream Flushing in TestCases
+* Inside `python:` blocks in testcases, standard Python `print()` calls are block-buffered when stdout is piped inside subprocesses (e.g., `xvfb-run` or `manage.py test`).
+* **Resolution:** Always use `print(..., flush=True)` or call `import sys; sys.stdout.flush()` inside testcase Python blocks to ensure diagnostic logs stream immediately to the console/CI runner.
+
+### UTF-8 BOM Handling in Failure Diagnostics
+* Ren'Py automatically writes `errors.txt` and `traceback.txt` to the project root with UTF-8 BOM (`\ufeff`) headers.
+* **Resolution:** When reading these diagnostic files in Python tooling (`manage.py`), use `encoding="utf-8-sig"` and handle `UnicodeEncodeError` on Windows CLI environments.
+
 ### Orphan Compiled Files (`.rpyc` / `.rpyc.bak`)
 If a script file is moved or renamed, it leaves behind a compiled `.rpyc` file in the old location. 
-* **The Problem:** Ren'Py will still load these orphan `.rpyc` files during initialization, silently executing the old code and overwriting active variables.
 * **Resolution:** Clean all `.rpyc` files recursively from the terminal when experiencing unexpected or stale variable states:
   ```powershell
-  Get-ChildItem -Path "game" -Filter *.rpyc -Recurse | Remove-Item
+  python manage.py clean -v
   ```
 
-### Debug Prints
-You can use standard python `print()` inside setup or testcase blocks to trace states. These prints will output directly to the terminal when executing tests via the Python interpreter.
-
-### Headless CI Virtual Display Resolution (`Xvfb`)
-* **The Problem:** In headless Linux CI containers, `xvfb-run` creates a virtual frame buffer. If Xvfb is configured with a resolution smaller than the game's native UI resolution (e.g. `1280x720` vs native `1920x1080`), UI elements placed outside 720p bounds (such as `pos (40, 880)`) are clipped off-screen. Consequently, spatial E2E `click "Text"` statements fail to find bounding boxes and raise `RenpyTestTimeoutError`.
-* **Resolution:** Ensure the headless display buffer in CI matches the project's native screen resolution (`-screen 0 1920x1080x24`):
-  ```yaml
-  xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python manage.py test global
-  ```
-
-
+### Headless CI Virtual Display & Graphic Environment (`Xvfb` + Mesa Software GL)
+* Configure the graphic environment with Mesa DRI drivers, dummy audio, 1080p GLX server args, and branch pattern matching (`push.branches` / `pull_request.branches` including `n-*`) in `.github/workflows/ci.yml`.
+* Configure `_test.timeout = 15.0` in the `setup:` block of spatial E2E UI testsuites to prevent slower shared CI container runners from exceeding Ren'Py's default 5.0s per-statement timeout.
