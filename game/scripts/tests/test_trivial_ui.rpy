@@ -1,7 +1,6 @@
 # game/scripts/tests/test_trivial_ui.rpy
 
 screen test_trivial_screen():
-    tag menu
     modal True
     add "#000d"
     default test_state = "initial"
@@ -19,6 +18,10 @@ screen test_trivial_screen():
                 text_bold True
                 text_color "#ffffff"
 
+label test_trivial_entry_label:
+    show screen test_trivial_screen
+    return
+
 testsuite trivial_e2e_ui_tests:
     setup:
         python:
@@ -26,8 +29,7 @@ testsuite trivial_e2e_ui_tests:
             _test.timeout = 15.0
 
     testcase test_trivial_click:
-        $ renpy.transition(None)
-        $ renpy.show_screen("test_trivial_screen")
+        $ renpy.call_in_new_context("test_trivial_entry_label")
         pause 0.2
         python:
             import sys
