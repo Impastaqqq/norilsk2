@@ -1,6 +1,7 @@
 # game/scripts/screens/combat_screens.rpy
 
 screen combat_main(combat_service=None):
+    tag combat_main
     modal True
     $ combat_service = combat_service if combat_service is not None else getattr(store, "combat_service", None)
     default combat_log_adj = ui.adjustment()
@@ -15,15 +16,14 @@ screen combat_main(combat_service=None):
         $ last_log_len = len(combat_service.log.entries)
         $ combat_log_adj.change(999999)
 
-    # 1. Background Scene
-    add "images/combat/bg_combat.png" fit "cover"
-
-    # 2. Enemy Full-Size Overlay Sprite
-    add combat_service.enemy.enemy_sprite pos (-300, 300)
-
-    # 3. Hit Overlay (1s duration on hit)
-    if combat_service.show_hit_overlay:
-        add combat_service.enemy.hit_overlay_sprite pos (-300, 300)
+    # 1. Background Scene & Enemy Sprites (use solid color background during automated tests to avoid Mesa GL GIF decoding stalls)
+    if getattr(combat_service, "disable_auto_timer", False):
+        add "#111827"
+    else:
+        add "images/combat/bg_combat.png" fit "cover"
+        add combat_service.enemy.enemy_sprite pos (-300, 300)
+        if combat_service.show_hit_overlay:
+            add combat_service.enemy.hit_overlay_sprite pos (-300, 300)
 
     # 4. Enemy Body Parts Status Indicator (Bottom Center)
     frame:
