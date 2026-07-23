@@ -1,7 +1,7 @@
 # game/scripts/tests/test_trivial_ui.rpy
 
 screen test_trivial_screen():
-    tag test_trivial_screen
+    tag menu
     modal True
     add "#000d"
     default test_state = "initial"
@@ -26,10 +26,7 @@ testsuite trivial_e2e_ui_tests:
             _test.timeout = 15.0
 
     testcase test_trivial_click:
-        # Exit main menu context so screen manager updates focus_list immediately
-        $ renpy.game.context().main_menu = False
         $ renpy.transition(None)
-        $ renpy.hide_screen("main_menu")
         $ renpy.show_screen("test_trivial_screen")
         pause 0.2
         python:
