@@ -252,6 +252,22 @@ def cmd_test_single(test_suite: str, no_kill: bool = False, timeout: float = 30.
         if rc != 0 and not clean_termination:
             any_test_failed = True
             
+        if any_test_failed:
+            print("\n[Runner] --- FAILURE DIAGNOSTICS (errors.txt / traceback.txt) ---")
+            for filename in ["errors.txt", "traceback.txt"]:
+                filepath = os.path.join(PROJECT_DIR, filename)
+                if os.path.exists(filepath):
+                    print(f"=== {filename} ===")
+                    try:
+                        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read().strip()
+                            if content:
+                                print(content)
+                            else:
+                                print("(empty)")
+                    except Exception as e:
+                        print(f"Failed to read {filename}: {e}")
+            
     return not any_test_failed
 
 def cmd_test(test_suite: str = "global", no_kill: bool = False, exclude_e2e: bool = False, timeout: float = 30.0) -> None:
