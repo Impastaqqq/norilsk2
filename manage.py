@@ -261,10 +261,13 @@ def cmd_test_single(test_suite: str, no_kill: bool = False, timeout: float = 30.
                 if os.path.exists(filepath):
                     print(f"=== {filename} ===")
                     try:
-                        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                        with open(filepath, "r", encoding="utf-8-sig", errors="ignore") as f:
                             content = f.read().strip()
                             if content:
-                                print(content)
+                                try:
+                                    print(content)
+                                except UnicodeEncodeError:
+                                    print(content.encode("ascii", "backslashreplace").decode("ascii"))
                             else:
                                 print("(empty)")
                     except Exception as e:

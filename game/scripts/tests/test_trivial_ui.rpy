@@ -18,10 +18,6 @@ screen test_trivial_screen():
                 text_bold True
                 text_color "#ffffff"
 
-label test_trivial_entry_label:
-    show screen test_trivial_screen
-    return
-
 testsuite trivial_e2e_ui_tests:
     setup:
         python:
@@ -29,7 +25,9 @@ testsuite trivial_e2e_ui_tests:
             _test.timeout = 15.0
 
     testcase test_trivial_click:
-        $ renpy.call_in_new_context("test_trivial_entry_label")
+        $ renpy.hide_screen("main_menu")
+        $ renpy.show_screen("test_trivial_screen")
+        $ renpy.restart_interaction()
         pause 0.2
         python:
             import sys
