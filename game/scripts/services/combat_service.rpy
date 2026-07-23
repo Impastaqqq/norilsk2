@@ -71,6 +71,7 @@ init -1 python:
             self.log.add(f"{{color=#ffcc00}}{{b}}Turn {self.turn_number}, Player{{/b}}{{/color}}")
             self._spawn_stage_targets()
             self.log.add(f"QTE Started! Total Timer: {weapon.time_limit:.1f}s across {self.total_stages} stages.")
+            renpy.restart_interaction()
 
         def _spawn_stage_targets(self) -> None:
             weapon = self.player.equipped_weapon
