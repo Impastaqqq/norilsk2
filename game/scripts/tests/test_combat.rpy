@@ -17,6 +17,7 @@ testsuite combat_service_tests:
             start_y = points[0][1]
             mid_y = points[2][1]
             assert mid_y < start_y, f"Arc peak Y ({mid_y}) should be smaller than start Y ({start_y})"
+        pause 0.01
 
     testcase test_qte_positioning_hammer_square:
         python:
@@ -26,6 +27,7 @@ testsuite combat_service_tests:
             assert points[0] == (810, 390), f"Expected top-left corner (810, 390), got {points[0]}"
             # Verify bottom-right corner
             assert points[2] == (1110, 690), f"Expected bottom-right corner (1110, 690), got {points[2]}"
+        pause 0.01
 
     testcase test_target_opacity_change_on_hit:
         python:
@@ -36,6 +38,7 @@ testsuite combat_service_tests:
             target.mark_hit()
             assert target.opacity == 0.5, f"Target opacity on hit should be 0.5, got {target.opacity}"
             assert target.is_clicked, "Target should be marked clicked"
+        pause 0.01
 
     testcase test_knife_slashing_all_or_nothing_damage:
         python:
@@ -73,6 +76,7 @@ testsuite combat_service_tests:
             # 100% combo across all stages should deal 20 damage -> 30 HP remaining and show hit overlay
             assert service.enemy.current_hp == 30, f"Expected 30 HP on 100% knife combo, got {service.enemy.current_hp}"
             assert service.show_hit_overlay, "Hit overlay SHOULD show on successful damage attack"
+        pause 0.01
 
     testcase test_hammer_blunt_damage_and_stun:
         python:
@@ -95,6 +99,7 @@ testsuite combat_service_tests:
             assert any("ENEMY STUNNED" in msg for msg in service.log.entries), "Log should record ENEMY STUNNED turn skip"
             # Enemy HP should be reduced by base roll (12-18)
             assert service.enemy.current_hp < 50, f"Enemy HP should be reduced from 50, got {service.enemy.current_hp}"
+        pause 0.01
 
     testcase test_enemy_body_part_destruction:
         python:
@@ -109,6 +114,7 @@ testsuite combat_service_tests:
             service._evaluate_body_parts()
 
             assert top_tendril.is_broken, "Top tendril should be broken at 25 HP remaining"
+        pause 0.01
 
     testcase test_enemies_database_dictionary:
         python:
@@ -121,6 +127,7 @@ testsuite combat_service_tests:
             assert behemoth.name == "Behemoth", f"Expected name Behemoth, got {behemoth.name}"
             assert behemoth.max_hp == 200, f"Expected 200 HP for Behemoth, got {behemoth.max_hp}"
             assert len(behemoth.body_parts) == 4, f"Expected 4 body parts for Behemoth, got {len(behemoth.body_parts)}"
+        pause 0.01
 
     testcase test_weapons_database_dictionary:
         python:
@@ -131,6 +138,7 @@ testsuite combat_service_tests:
             assert chainsaw.name == "Chainsaw", f"Expected Chainsaw name, got {chainsaw.name}"
             assert chainsaw.weapon_type == WeaponType.SLASHING, f"Expected SLASHING type, got {chainsaw.weapon_type}"
             assert chainsaw.min_damage == 50, f"Expected 50 min damage, got {chainsaw.min_damage}"
+        pause 0.01
 
     testcase test_combat_screen_ui_flow:
         python:
@@ -164,6 +172,7 @@ testsuite combat_service_tests:
 
             # Clean up screen state
             renpy.hide_screen("combat_main")
+        pause 0.01
 
 
 testsuite combat_e2e_ui_tests:
