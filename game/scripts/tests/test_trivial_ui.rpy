@@ -26,7 +26,8 @@ testsuite trivial_e2e_ui_tests:
             _test.timeout = 15.0
 
     testcase test_trivial_click:
-        # Clear main menu enter transition and background screen to prevent focus delay
+        # Exit main menu context so screen manager updates focus_list immediately
+        $ renpy.game.context().main_menu = False
         $ renpy.transition(None)
         $ renpy.hide_screen("main_menu")
         $ renpy.show_screen("test_trivial_screen")

@@ -4,6 +4,8 @@ import sys
 import subprocess
 import time
 import re
+import urllib.request
+import json
 
 # Resolve project root path dynamically based on script location
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -344,17 +346,65 @@ def cmd_setup() -> None:
     print("\nRunning verification tests...")
     cmd_verify()
 
+class _NoAuthRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new_req = super().redirect_request(req, fp, code, msg, headers, newurl)
+        new_req.remove_header("Authorization")
+        return new_req
+
+def get_git_token() -> str:
+    try:
+        p = subprocess.Popen(["git", "credential", "fill"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        out, _ = p.communicate("url=https://github.com\n")
+        for line in out.splitlines():
+            if line.startswith("password="):
+                return line.split("=", 1)[1].strip()
+    except Exception:
+        pass
+    return ""
+
+def fetch_ci_logs(run_id: int) -> None:
+    token = get_git_token()
+    if not token:
+        return
+    try:
+        import json
+        jobs_url = f"https://api.github.com/repos/Impastaqqq/norilsk2/actions/runs/{run_id}/jobs"
+        req = urllib.request.Request(jobs_url, headers={"User-Agent": "Mozilla/5.0", "Authorization": f"token {token}"})
+        with urllib.request.urlopen(req) as resp:
+            jobs_data = json.loads(resp.read().decode("utf-8"))
+            jobs = jobs_data.get("jobs", [])
+            if not jobs:
+                return
+            job_id = jobs[0]["id"]
+            
+        logs_url = f"https://api.github.com/repos/Impastaqqq/norilsk2/actions/jobs/{job_id}/logs"
+        log_req = urllib.request.Request(logs_url, headers={"User-Agent": "Mozilla/5.0", "Authorization": f"Bearer {token}"})
+        opener = urllib.request.build_opener(_NoAuthRedirectHandler())
+        with opener.open(log_req) as log_resp:
+            content = log_resp.read().decode("utf-8", errors="ignore")
+            print(f"\n=== CI Log Stream Output (Run #{run_id}, Job #{job_id}) ===")
+            matching_lines = [line for line in content.splitlines() if any(k in line for k in ["[rpytest]", "DIAGNOSTIC", "RenpyTestTimeoutError", "ERRORS", "TRACEBACK", "FAILED", "PASSED"])]
+            if matching_lines:
+                print("\n".join(matching_lines[-60:]))
+            else:
+                print("\n".join(content.splitlines()[-40:]))
+    except Exception as e:
+        print(f"[CI Log Fetcher Warning] Could not fetch log stream: {e}")
+
 def cmd_ci_status(watch: bool = False) -> None:
     """Queries GitHub Actions REST API for recent workflow runs."""
-    import urllib.request
-    import json
-    
+    token = get_git_token()
+    headers = {"User-Agent": "Mozilla/5.0"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+        
     url = "https://api.github.com/repos/Impastaqqq/norilsk2/actions/runs"
     print("=== GitHub Actions CI Status ===")
     
     while True:
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 runs = data.get("workflow_runs", [])
@@ -374,6 +424,8 @@ def cmd_ci_status(watch: bool = False) -> None:
                 print(f"     Status: {status} | Conclusion: {conclusion}")
                 
                 if not watch or status == "completed":
+                    if conclusion == "failure":
+                        fetch_ci_logs(run_id)
                     break
                 
                 print("     [Watching] Waiting 10s for workflow run to complete...")
