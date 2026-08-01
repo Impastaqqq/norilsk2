@@ -1,8 +1,10 @@
 # game/scripts/scenes/prototypes/test_tv_combat_scene.rpy
 
 default tv_grain_enabled = True
-default tv_grain_strength = 0.08
+default tv_grain_strength = 0.15
 default tv_grain_speed = 15.0
+default tv_grain_size = 2.0
+default tv_grain_distortion = 0.10
 
 screen test_tv_combat_screen():
     modal True
@@ -11,7 +13,7 @@ screen test_tv_combat_screen():
     if tv_grain_enabled:
         add "images/combat/bg_combat.png":
             fit "cover"
-            at film_grain(strength=tv_grain_strength, speed=tv_grain_speed)
+            at film_grain(strength=tv_grain_strength, speed=tv_grain_speed, size=tv_grain_size, distortion=tv_grain_distortion)
     else:
         add "images/combat/bg_combat.png":
             fit "cover"
@@ -30,7 +32,7 @@ screen test_tv_combat_screen():
         xsize 450
 
         vbox:
-            spacing 12
+            spacing 10
 
             text "TV Combat Scene Prototype" size 22 bold True color "#ffffff"
 
@@ -48,16 +50,34 @@ screen test_tv_combat_screen():
 
             if tv_grain_enabled:
                 vbox:
-                    spacing 4
+                    spacing 2
                     hbox:
                         text "Grain Strength: " color "#cccccc" size 14
                         text "[tv_grain_strength:.2f]" color "#00ffcc" size 14 bold True
                     bar:
-                        value VariableValue("tv_grain_strength", range=0.30, step=0.01)
+                        value VariableValue("tv_grain_strength", range=1.00, step=0.02)
                         xsize 410
 
                 vbox:
-                    spacing 4
+                    spacing 2
+                    hbox:
+                        text "Grain Size (Coarseness): " color "#cccccc" size 14
+                        text "[tv_grain_size:.1f]px" color "#00ffcc" size 14 bold True
+                    bar:
+                        value VariableValue("tv_grain_size", range=10.0, step=0.5)
+                        xsize 410
+
+                vbox:
+                    spacing 2
+                    hbox:
+                        text "Image Distortion (Warp): " color "#cccccc" size 14
+                        text "[tv_grain_distortion:.2f]" color "#00ffcc" size 14 bold True
+                    bar:
+                        value VariableValue("tv_grain_distortion", range=1.00, step=0.02)
+                        xsize 410
+
+                vbox:
+                    spacing 2
                     hbox:
                         text "Grain Speed: " color "#cccccc" size 14
                         text "[tv_grain_speed:.1f]" color "#00ffcc" size 14 bold True
@@ -68,15 +88,23 @@ screen test_tv_combat_screen():
             hbox:
                 spacing 20
                 textbutton "Reset Defaults":
-                    action [SetVariable("tv_grain_enabled", True), SetVariable("tv_grain_strength", 0.08), SetVariable("tv_grain_speed", 15.0)]
+                    action [
+                        SetVariable("tv_grain_enabled", True),
+                        SetVariable("tv_grain_strength", 0.15),
+                        SetVariable("tv_grain_speed", 15.0),
+                        SetVariable("tv_grain_size", 2.0),
+                        SetVariable("tv_grain_distortion", 0.10)
+                    ]
                 textbutton "Return":
                     action Return()
 
 
 label test_tv_combat_scene:
     $ store.tv_grain_enabled = True
-    $ store.tv_grain_strength = 0.08
+    $ store.tv_grain_strength = 0.15
     $ store.tv_grain_speed = 15.0
+    $ store.tv_grain_size = 2.0
+    $ store.tv_grain_distortion = 0.10
 
     call screen test_tv_combat_screen
     return
