@@ -9,6 +9,8 @@ label start:
                 pass
             "Test Combat Prototype":
                 jump combat_test_scene
+            "Test Screen Prototype":
+                jump test_tv_combat_scene
 
     scene black
 
