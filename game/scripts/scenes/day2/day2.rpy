@@ -5,23 +5,23 @@ label day2:
 
     "You continue your journey."
 
-    scene d23 with dissolve
+    scene day2 d23 with dissolve
 
     pause 1.0
 
-    scene d24 with dissolve
+    scene day2 d24 with dissolve
 
     "You see smoke coming from a clearing and decide to investigate."
 
     "You turn your radio low"
 
-    scene d25 with fade
+    scene day2 d25 with fade
 
     "While you sneak behind a rock to check who it is…"
 
-    scene d27
+    scene day2 d27
 
-    show jakovangry with moveinbottom:
+    show day2 jakovangry with moveinbottom:
         zoom 1.4
         xpos 0.10
         ypos 0.10
@@ -33,7 +33,7 @@ label day2:
 
     menu d21st:
         "Don't worry I’m harmless I’m just passing by":
-            show adamtalkhandsup with easeinbottom:
+            show day2 adamtalkhandsup with easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
@@ -41,7 +41,7 @@ label day2:
             jump d22nd
 
         "I'm just a kid don't shoot me!":
-            show adamtalkhandsup with easeinbottom:
+            show day2 adamtalkhandsup with easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00

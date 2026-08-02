@@ -3,12 +3,12 @@
 label d26th:
     scene d211 with dissolve
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -22,19 +22,19 @@ label d26th:
 
     "You walk down the river towards the boat house"
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
 
     j "Keep your eyes open, the monsters could be anywhere..."
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -51,11 +51,11 @@ label d26th:
     hide jakovserious
     hide verdieserious
 
-    scene d214 with dissolve
+    scene day2 d214 with dissolve
 
     "You arrive at the boat house, it's run down and covered in vines"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -63,12 +63,12 @@ label d26th:
     a "Let's check inside"
 
     hide adamtalk
-    show adamserious:
+    show day2 adamserious:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -78,16 +78,16 @@ label d26th:
     hide adamserious
     hide jakovserious
 
-    scene d215 with fade
+    scene day2 d215 with fade
 
     "You enter the boat house and search for anything useful"
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -96,7 +96,7 @@ label d26th:
 
     j "We'll need some tools and wood to fix it"
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -111,7 +111,7 @@ label d26th:
 
     j "Okay, we'll head there. Adam, you stay here and keep watch, we'll be back soon"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -119,7 +119,7 @@ label d26th:
     a "Okay, I'll stay here"
 
     hide adamtalk
-    show adamsad:
+    show day2 adamsad:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -135,7 +135,7 @@ label d26th:
 
     "Jakov and Verdie leave the boat house"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -143,7 +143,7 @@ label d26th:
     a "I hope they'll be safe..."
 
     hide adamtalk
-    show adamsad:
+    show day2 adamsad:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -158,7 +158,7 @@ label d26th:
 
     menu d27th:
         "Investigate":
-            show adamserious with easeinbottom:
+            show day2 adamserious with easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
@@ -168,7 +168,7 @@ label d26th:
             jump d28th
 
         "Hide":
-            show adamsad with easeinbottom:
+            show day2 adamsad with easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00

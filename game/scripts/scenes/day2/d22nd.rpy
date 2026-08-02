@@ -3,14 +3,14 @@
 label d22nd:
     hide adamtalkhandsup
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
     "..."
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -32,23 +32,23 @@ label d22nd:
     hide adamserious
     hide jakovserious
 
-    scene d28 with dissolve
+    scene day2 d28 with dissolve
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
     "You walk out of the bush to the clearing where the camp was."
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
 
     "Beside Jakov was a woman holding a shotgun pointing it slightly downwards."
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -73,12 +73,12 @@ label d22nd:
 
     "You stand by the fire and warm your hands"
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -91,7 +91,7 @@ label d22nd:
 
     j "Since you're alone you can come with us, you won't survive out here for long by yourself anyway"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -99,7 +99,7 @@ label d22nd:
     a "I'm Adam, and I'd like to join you"
 
     hide adamtalk
-    show adamserious:
+    show day2 adamserious:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -113,7 +113,7 @@ label d22nd:
 
     menu d23rd:
         "Share food (-3 food)" if food >= 3:
-            show adamtalk at easeinbottom:
+            show day2 adamtalk at easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
@@ -121,14 +121,14 @@ label d22nd:
             $ food -= 3
             hide adamtalk
 
-            show jakovserious at appear_right:
+            show day2 jakovserious at appear_right:
                 zoom 1.4
                 xpos 0.65
                 ypos 0.10
             j "Thank you kid, this is a lifesaver"
             hide jakovserious
 
-            show verdietalk at appear_top:
+            show day2 verdietalk at appear_top:
                 zoom 0.60
                 xpos 0.35
                 ypos -0.15
@@ -137,14 +137,14 @@ label d22nd:
             jump d24th
 
         "Keep food":
-            show adamsad with easeinbottom:
+            show day2 adamsad with easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
             a "I don't have any food either..."
             hide adamsad
 
-            show jakovserious at appear_right:
+            show day2 jakovserious at appear_right:
                 zoom 1.4
                 xpos 0.65
                 ypos 0.10

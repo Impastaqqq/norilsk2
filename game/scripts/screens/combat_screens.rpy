@@ -167,3 +167,198 @@ screen combat_tv_qte_overlay(combat_service):
             anchor (0.5, 0.5)
             action Function(combat_service.click_target, target.target_id)
             sensitive (not target.is_clicked)
+
+
+# Animated tendril small enemy sprite
+image tendril_small_idle:
+    "images/combat/enemies/tendril_small/small_fullhp.png"
+    pause 0.2
+    "images/combat/enemies/tendril_small/small_fullhp2.png"
+    pause 0.2
+    "images/combat/enemies/tendril_small/small_fullhp3.png"
+    pause 0.2
+    repeat
+
+
+# ATL transform for UI control panel rolling from below the screen
+transform action_panel_roll_up:
+    subpixel True
+    yanchor 1.0
+    xanchor 0.5
+    on show:
+        pos (960, 1800)
+        easein 0.6 pos (960, 1080)
+    on replace:
+        easein 0.5 pos (960, 1080)
+
+# ATL transform for UI control panel rolling down completely behind screen
+transform action_panel_roll_down:
+    subpixel True
+    yanchor 1.0
+    xanchor 0.5
+    easein 0.5 pos (960, 1800)
+
+
+# ATL transform for player health panel rolling down from top of screen
+transform health_panel_roll_down:
+    subpixel True
+    yanchor 0.0
+    xanchor 0.0
+    on show:
+        pos (120, -400)
+        easein 0.6 pos (120, 0)
+    on replace:
+        easein 0.5 pos (120, 0)
+
+# ATL transform for player health panel rolling up completely behind screen
+transform health_panel_roll_up:
+    subpixel True
+    yanchor 0.0
+    xanchor 0.0
+    easein 0.5 pos (120, -400)
+
+
+# ATL transform for TV border frame rolling down from top of screen
+transform tv_border_roll_down:
+    subpixel True
+    pos (0, -1080)
+    pause 0.2
+    easein 0.6 pos (0, 0)
+
+
+# ATL transform for TV distortion filter container rolling down in sync with TV frame
+transform tv_distortion_roll_down:
+    subpixel True
+    pos (100, -980)
+    pause 0.2
+    easein 0.6 pos (100, 100)
+
+
+screen combat_main_v2(combat_service=None):
+    modal True
+    default current_weapon = "Knife"
+    default player_hp = 100
+    default player_max_hp = 100
+    default fight_mode = False
+
+    # Timer tick for QTE countdown & hit overlay decay
+    if combat_service is not None:
+        timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)
+
+    $ active_hp = combat_service.player.hp if combat_service is not None else player_hp
+    $ active_max_hp = combat_service.player.max_hp if combat_service is not None else player_max_hp
+    $ active_weapon_name = combat_service.player.equipped_weapon.name if combat_service is not None else current_weapon
+    $ weapon_icon = "images/combat/weapons/knife1.png" if "Knife" in active_weapon_name else "images/combat/weapons/hammer1.png"
+    $ next_weapon = "Hammer" if "Knife" in active_weapon_name else "Knife"
+
+    # 1. Base Clean Background Combat Image (Full 1920x1080 screen)
+    add "images/combat/bg_combat.png":
+        fit "cover"
+
+    # 2. Base Clean Animated Enemy Sprite (Middle of screen)
+    add "tendril_small_idle":
+        align (0.5, 0.5)
+
+    # 3. TV Screen Distortion Filter & TV Border (Active ONLY in fight_mode, no distortion at start of fight)
+    if fight_mode:
+        fixed:
+            at tv_distortion_roll_down
+            xsize 1720
+            ysize 980
+            clipping True
+
+            # Distorted Background Image inside TV lens (Dynamic noise reduction as QTE targets are hit)
+            add "images/combat/bg_combat.png":
+                pos (-100, -100)
+                fit "cover"
+                at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
+
+            # Distorted Enemy Sprite inside TV lens (Dynamic noise reduction as QTE targets are hit)
+            add "tendril_small_idle":
+                align (0.5, 0.5)
+                at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
+
+            # Enemy Hit Flash Overlay inside TV screen
+            if combat_service is not None and combat_service.show_hit_overlay:
+                add combat_service.enemy.hit_overlay_sprite:
+                    align (0.5, 0.5)
+
+        # 4. TV Screen Border Overlay
+        add "images/combat/tv_border.png":
+            at tv_border_roll_down
+            xsize 1920
+            ysize 1080
+            fit "fill"
+
+    # 7. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
+    fixed:
+        at (health_panel_roll_up if fight_mode else health_panel_roll_down)
+        fit_first True
+        pos (40, 0)
+        anchor (0.0, 0.0)
+
+        # Health Screen Base Asset
+        add "images/combat/ui/health_screen.png"
+
+        # Numeric Player Health Overlay
+        text "[active_hp]" size 42 bold True color "#22e004" outlines [(1, "#000000", 0, 0)] align (0.5, 0.5) xoffset -25 yoffset 20
+
+    # 8. UI Control Panel (rolls up on enter, rolls down behind screen on fight)
+    fixed:
+        at (action_panel_roll_down if fight_mode else action_panel_roll_up)
+        fit_first True
+        pos (960, 1080)
+        anchor (0.5, 1.0)
+
+        # Control Panel Base Asset
+        add "images/combat/ui/action_select_screen.png"
+
+        # Weapon Toggle Button (Top Left of UI Control Panel)
+        imagebutton:
+            idle Transform(weapon_icon, align=(0.5, 0.5))
+            hover Transform(weapon_icon, align=(0.5, 0.5), zoom=1.15)
+            pos (220, 110)
+            anchor (0.5, 0.5)
+            action If(combat_service is not None, Function(combat_service.select_weapon, next_weapon), SetScreenVariable("current_weapon", next_weapon))
+
+        # Action Buttons Overlay (Fight on left, Heal on right)
+        hbox:
+            align (0.5, 0.5)
+            spacing 40
+
+            imagebutton:
+                idle "images/combat/ui/fight_idle.png"
+                hover "images/combat/ui/fight_hover.png"
+                selected_idle "images/combat/ui/fight_click.png"
+                selected_hover "images/combat/ui/fight_click.png"
+                xoffset -80
+                yoffset 100
+                action [
+                    SetScreenVariable("fight_mode", True),
+                    If(combat_service is not None, Function(combat_service.start_qte_phase), NullAction())
+                ]
+
+            imagebutton:
+                idle "images/combat/ui/heal_idle.png"
+                hover "images/combat/ui/heal_hover.png"
+                selected_idle "images/combat/ui/heal_clicked.png"
+                selected_hover "images/combat/ui/heal_clicked.png"
+                at Transform(zoom=0.9)
+                xoffset 60
+                yoffset 100
+                action If(combat_service is not None, Function(combat_service.heal_player), NullAction())
+
+    # 9. Prototype Debug UI Reset Button (Visible in fight mode)
+    if fight_mode:
+        textbutton "RESET UI":
+            align (0.98, 0.02)
+            action SetScreenVariable("fight_mode", False)
+            text_color "#ff8888"
+            text_size 14
+            text_outlines [(1, "#000000", 0, 0)]
+
+
+
+
+
+

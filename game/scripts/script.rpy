@@ -30,11 +30,11 @@ init python:
     renpy.music.register_channel('radio',"music")
 
 image sam:
-    "sam1"
+    "day1 sam1"
     pause 0.3
-    "sam2"
+    "day1 sam2"
     pause 0.3
-    "sam3"
+    "day1 sam3"
     pause 0.3
     repeat
 
@@ -48,10 +48,10 @@ image sleep1st:
     repeat
 
 image attack1st:
-    "attack1"
+    "day1 attack1"
     pause 0.3
-    "attack2"
+    "day1 attack2"
     pause 0.3
-    "attack3"
+    "day1 attack3"
     pause 0.3
     repeat

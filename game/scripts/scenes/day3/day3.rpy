@@ -4,18 +4,18 @@ label day3:
     # first boss fight
     # do the thingy finding the person and animation pop up title the behemoth cluster
 
-    scene d35 with dissolve
+    scene day3 d35 with dissolve
     with vpunch
 
     "You run away with Eva"
 
-    scene d36 with fade
+    scene day3 d36 with fade
 
     "soon you find yourself at the shore"
 
     "You find a piece of candy on the floor…"
 
-    scene d37 with fade
+    scene day3 d37 with fade
 
     "I remember this adam, it was your favorite"
 
@@ -25,7 +25,7 @@ label day3:
 
     pause 1.5
 
-    scene d38 with fade
+    scene day3 D38 with fade
 
     pause 4.0
 
@@ -33,7 +33,7 @@ label day3:
 
     pause 1.0
 
-    scene d310
+    scene day3 D310
 
     "You get across the river, and continue your journey…"
 
@@ -41,7 +41,7 @@ label day3:
 
     pause 3.0
 
-    scene d312 with fade
+    scene day3 d312 with fade
 
     "It’s getting late soon you need to rest… "
 
@@ -49,7 +49,7 @@ label day3:
 
     pause 1.0
 
-    scene d313 with fade
+    scene day3 D313 with fade
 
     pause 1.00
     play sound "audio/time.mp3" volume 0.5

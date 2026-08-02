@@ -3,7 +3,7 @@
 label afterscav:
     stop music fadeout 1.5
     stop sound fadeout 1.5
-    show d112-13 with fade
+    show day1 d112-13 with fade
 
     "You walk out of the gas station and start to make your way back onto the road but then… (have the radio playing loudly)"
 
@@ -21,7 +21,7 @@ label afterscav:
 
     pause 2.0
 
-    scene d115 with dissolve
+    scene day1 d115 with dissolve
 
     "You run away and make it back on the path"
 
@@ -32,7 +32,7 @@ label afterscav:
 
     "It’s getting late you're going to have to camp out"
 
-    scene d118 with fade
+    scene day1 d118 with fade
 
     pause 1.00
     play sound "audio/time.mp3" volume 0.5

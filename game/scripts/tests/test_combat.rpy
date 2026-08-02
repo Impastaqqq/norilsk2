@@ -175,42 +175,4 @@ testsuite combat_service_tests:
         pause 0.01
 
 
-# testsuite disabled_combat_e2e_ui_tests:
-#     setup:
-#         python:
-#             from renpy.test.testsettings import _test
-#             _test.timeout = 15.0
-# 
-#     testcase test_e2e_combat_button_clicks:
-#         # 1. Start Combat & Render Screen
-#         $ test_service = CombatService()
-#         $ test_service.start_combat(create_weapon_from_db("Knife"))
-#         $ renpy.show_screen("combat_main", combat_service=test_service)
-#         pause 0.2
-# 
-#         # 2. Imitate User Action: Click "FIGHT (QTE)" screen button by matching rendered UI text
-#         click "FIGHT (QTE)"
-#         pause 0.2
-#         $ assert test_service.qte_active, "QTE should be active after clicking FIGHT (QTE) button"
-# 
-#         # 3. Imitate User Actions: Click QTE target buttons
-#         python:
-#             while test_service.qte_active and test_service.current_stage <= test_service.total_stages:
-#                 targets = list(test_service.current_targets)
-#                 for target in targets:
-#                     test_service.click_target(target.target_id)
-# 
-#         pause 0.2
-# 
-#         # 4. Assert Damage Dealt & UI state after E2E UI clicks
-#         $ assert not test_service.qte_active, "QTE should finish"
-#         $ assert test_service.enemy.current_hp == 30, f"Expected 30 HP remaining, got {test_service.enemy.current_hp}"
-#         $ assert test_service.show_hit_overlay, "Hit overlay should be active"
-# 
-#         $ renpy.hide_screen("combat_main")
-
-
-
-
-
 

@@ -5,12 +5,12 @@ label d24th:
 
     "The night goes on and you talk to Jakov and Verdie"
 
-    show adamsad with easeinbottom:
+    show day2 adamsad with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -23,7 +23,7 @@ label d24th:
 
     j "But you're strong, you survived a month by yourself"
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -63,12 +63,12 @@ label d24th:
 
     "You wake up and see Jakov packing up the camp"
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -82,7 +82,7 @@ label d24th:
     hide adamserious
     hide jakovserious
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -97,14 +97,14 @@ label d24th:
         xpos 0.35
         ypos -0.15
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
 
     j "What is it?"
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -120,7 +120,7 @@ label d24th:
 
     j "Verdie, how many of them are there?"
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -134,7 +134,7 @@ label d24th:
 
     j "We can't fight them... It's too risky"
 
-    show adamserious with easeinbottom:
+    show day2 adamserious with easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -151,18 +151,18 @@ label d24th:
 
     menu d25th:
         "Offer to negotiate":
-            show adamtalk at easeinbottom:
+            show day2 adamtalk at easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
             a "Maybe I can talk to them? They might not see a kid as a threat"
             hide adamtalk
-            show adamserious:
+            show day2 adamserious:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
 
-            show jakovserious at appear_right:
+            show day2 jakovserious at appear_right:
                 zoom 1.4
                 xpos 0.65
                 ypos 0.10
@@ -172,18 +172,18 @@ label d24th:
             jump d26th
 
         "Look for a boat":
-            show adamtalk at easeinbottom:
+            show day2 adamtalk at easeinbottom:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
             a "Is there a boat nearby? We could cross the river"
             hide adamtalk
-            show adamserious:
+            show day2 adamserious:
                 zoom 0.85
                 xpos 0.10
                 ypos 0.00
 
-            show jakovserious at appear_right:
+            show day2 jakovserious at appear_right:
                 zoom 1.4
                 xpos 0.65
                 ypos 0.10

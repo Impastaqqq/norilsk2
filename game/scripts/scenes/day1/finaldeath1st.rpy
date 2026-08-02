@@ -1,7 +1,7 @@
 # game/scripts/scenes/day1/finaldeath1st.rpy
 
 label finaldeath1st:
-    $ renpy.movie_cutscene("images/death1.webm")
+    $ renpy.movie_cutscene("images/day1/death1.webm")
 
     scene black with fade
 

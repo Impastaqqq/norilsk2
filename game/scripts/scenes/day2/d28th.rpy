@@ -1,9 +1,9 @@
 # game/scripts/scenes/day2/d28th.rpy
 
 label d28th:
-    scene d215 with fade
+    scene day2 d215 with fade
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -11,14 +11,14 @@ label d28th:
     a "Hey there... Come here..."
 
     hide adamtalk
-    show adamserious:
+    show day2 adamserious:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
     "The dog slowly walks towards you, sniffing your hand"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -26,7 +26,7 @@ label d28th:
     a "You're friendly, aren't you?"
 
     hide adamtalk
-    show adamserious:
+    show day2 adamserious:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -35,14 +35,14 @@ label d28th:
 
     "Jakov and Verdie return carrying some wood and tools"
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
 
     j "We got the stuff... Who's your friend?"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -50,12 +50,12 @@ label d28th:
     a "I don't know, it just walked in"
 
     hide adamtalk
-    show adamserious:
+    show day2 adamserious:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -76,7 +76,7 @@ label d28th:
     hide jakovserious
     hide verdieserious
 
-    scene d215 with fade
+    scene day2 d215 with fade
 
     "Jakov and Verdie start repairing the canoe"
 
@@ -84,7 +84,7 @@ label d28th:
 
     "After a couple of hours, the canoe is fixed"
 
-    show adamtalk at easeinbottom:
+    show day2 adamtalk at easeinbottom:
         zoom 0.85
         xpos 0.10
         ypos 0.00
@@ -92,12 +92,12 @@ label d28th:
     a "It looks good as new!"
 
     hide adamtalk
-    show adamserious:
+    show day2 adamserious:
         zoom 0.85
         xpos 0.10
         ypos 0.00
 
-    show jakovserious at appear_right:
+    show day2 jakovserious at appear_right:
         zoom 1.4
         xpos 0.65
         ypos 0.10
@@ -106,7 +106,7 @@ label d28th:
 
     j " let's camp here for the night"
 
-    show verdietalk at appear_top:
+    show day2 verdietalk at appear_top:
         zoom 0.60
         xpos 0.35
         ypos -0.15
@@ -129,15 +129,15 @@ label d28th:
 
     "You continue your journey"
 
-    scene d216 with fade
+    scene day2 d216 with fade
 
     pause 1.0
 
-    scene d217 with fade
+    scene day2 d217 with fade
 
     pause 1.5
 
-    scene d2177 with fade
+    scene day2 d2177 with fade
 
     "You check it out"
 
@@ -145,7 +145,7 @@ label d28th:
 
     "arf arf!"
 
-    scene d218 with fade
+    scene day2 d218 with fade
 
     "You walk up to the dog and it comes near you…"
 
@@ -159,13 +159,13 @@ label d28th:
 
     "You’ve been walking for a while now it’s time for you to set up for the night…"
 
-    scene d222 with fade
+    scene day2 d222 with fade
 
     "While you sit down you pet the dog and look up at the sky"
 
     "The sky is a lot prettier when you have company…"
 
-    scene d223 with fade
+    scene day2 d223 with fade
 
     pause 3.0
 
@@ -173,7 +173,7 @@ label d28th:
 
     # radio time
 
-    scene d222 with fade
+    scene day2 d222 with fade
 
     pause 1.00
 
