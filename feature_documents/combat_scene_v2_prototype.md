@@ -106,15 +106,17 @@ For fast context resumption in future coding sessions, below is the exact coordi
 | **Weapon Toggle Button** | Control Panel | `pos (220, 110)`, `anchor (0.5, 0.5)` | Hover `zoom 1.15` |
 | **Fight Button** | Control Panel HBox | `align (0.5, 0.5)` | `xoffset -80`, `yoffset 100` |
 | **Heal Button** | Control Panel HBox | `align (0.5, 0.5)` | `at Transform(zoom=0.9)`, `xoffset 60`, `yoffset 100` |
-| **TV Distortion Container** | Screen Root | `pos (100, 100)` resting | Roll-down `pos (100, -980)` -> `pos (100, 100)` (`xsize 1720, ysize 980`) |
-| **TV Border Overlay** | Screen Root | `pos (0, 0)` resting | Roll-down `pos (0, -1080)` -> `pos (0, 0)` (`1920x1080`) |
+| **Unified TV Container** | Screen Root | `pos (0, 0)` resting | Unified Roll-down `tv_roll_down`: `pos (0, -1080)` -> `pos (0, 0)` (`1920x1080`) |
+| **TV Distortion Lens** | Unified TV Container | `pos (100, 100)` static | `xsize 1720, ysize 980`, `clipping True` |
+| **TV Border Overlay** | Unified TV Container | `pos (0, 0)` static | `xsize 1920, ysize 1080` (`fit "fill"`) |
+| **Static QTE & Countdown** | Unified TV Container | `pos (0, 0)` static | Static QTE sprites & bottom-left countdown `hbox pos (220, 880)` |
 
 > [!TIP]
 > **Distortion Offset Manual Adjustment Formula**:
 > For horizontal offset `X` and top offset `Y`:
-> - `fixed pos (X, Y)` with `xsize (1920 - 2*X)` and `ysize (1080 - 2*Y)`
-> - Inner background `add "images/combat/bg_combat.png": pos (-X, -Y)`
-> - Roll transform: `tv_distortion_roll_down: pos (X, Y - 1080) easein 0.6 pos (X, Y)`
+> - Inside unified container, inner lens container: `fixed pos (X, Y)` with `xsize (1920 - 2*X)` and `ysize (1080 - 2*Y)`
+> - Inner background: `add "images/combat/bg_combat.png": pos (-X, -Y)`
+> - Container roll transform: `tv_roll_down: pos (0, -1080) pause 0.2 easein 0.6 pos (0, 0)`
 
 ---
 
@@ -126,12 +128,8 @@ When the player clicks the **Fight** button, `combat_main_v2` triggers a multi-s
    - Slides up completely off-screen from `pos (120, 0)` to `pos (120, -400)` over `0.5s` (`easein`).
 2. **Control Panel Roll-Down (`action_panel_roll_down`)**:
    - Slides down completely behind the screen from `pos (960, 1080)` to `pos (960, 1800)` over `0.5s` (`easein`).
-3. **TV Border Roll-Down (`tv_border_roll_down`)**:
-   - Pauses `0.2s` for panels to clear, then rolls down from `pos (0, -1080)` to `pos (0, 0)` over `0.6s` (`easein`).
-   - Uses `images/combat/tv_border.png` scaled to cover the full `1920x1080` screen.
-4. **Synchronized Roll-Down Heavy Noise TV Lens Filter (`tv_distortion_roll_down`)**:
-   - Full 1920x1080 screen displays the clean base background (`bg_combat.png`) and clean enemy sprite (`tendril_small_idle`).
-   - The TV lens distortion container uses `tv_distortion_roll_down` (`pos (100, -980)` to `pos (100, 100)` over `0.6s` after `0.2s` pause) to slide down from offscreen top in 100% lockstep synchronization with the TV frame overlay (`tv_border_roll_down`).
+3. **Unified TV Scene Roll-Down (`tv_roll_down`)**:
+   - Pauses `0.2s` for panels to clear, then rolls down the entire TV scene container (Distortion Lens, TV Border frame, static QTE targets, and countdown numbers) as a single unified container from `pos (0, -1080)` to `pos (0, 0)` over `0.6s` (`easein`).
    - Inside the container, heavy static noise versions of `bg_combat.png` (`pos (-100, -100)`) and `tendril_small_idle` (`align (0.5, 0.5)`) render with extreme noise and scanline distortion parameters: `film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)` clipped to the aperture bounds (`clipping True`).
 
 ---

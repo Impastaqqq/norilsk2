@@ -218,24 +218,8 @@ transform health_panel_roll_up:
     easein 0.5 pos (120, -400)
 
 
-# ATL transform for TV border frame rolling down from top of screen
-transform tv_border_roll_down:
-    subpixel True
-    pos (0, -1080)
-    pause 0.2
-    easein 0.6 pos (0, 0)
-
-
-# ATL transform for TV distortion filter container rolling down in sync with TV frame
-transform tv_distortion_roll_down:
-    subpixel True
-    pos (100, -980)
-    pause 0.2
-    easein 0.6 pos (100, 100)
-
-
-# ATL transform for TV QTE elements rolling down into view in sync with TV border
-transform tv_qte_roll_down:
+# # ATL transform for TV scene container rolling down from top of screen
+transform tv_roll_down:
     subpixel True
     pos (0, -1080)
     pause 0.2
@@ -271,65 +255,68 @@ screen combat_main_v2(combat_service=None):
     add "tendril_small_idle":
         align (0.5, 0.5)
 
-    # 3. TV Screen Distortion Filter & TV Border (Active ONLY in fight_mode, no distortion at start of fight)
+    # 3. Unified TV Fight Mode Container (Distortion Lens, Border Frame & QTE Overlay roll down together)
     if fight_mode:
         fixed:
-            at tv_distortion_roll_down
-            xsize 1720
-            ysize 980
-            clipping True
-
-            # Distorted Background Image inside TV lens
-            add "images/combat/bg_combat.png":
-                pos (-100, -100)
-                fit "cover"
-                at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
-
-            # Distorted Enemy Sprite inside TV lens
-            add "tendril_small_idle":
-                align (0.5, 0.5)
-                at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
-
-            # Enemy Hit Flash Overlay inside TV screen
-            if combat_service is not None and combat_service.show_hit_overlay:
-                add combat_service.enemy.hit_overlay_sprite:
-                    align (0.5, 0.5)
-
-        # 4. TV Screen Border Overlay
-        add "images/combat/tv_border.png":
-            at tv_border_roll_down
-            xsize 1920
-            ysize 1080
-            fit "fill"
-
-        # 5. Static QTE Sprites & Bottom-Left Countdown Numbers (Rolls down in sync with TV screen)
-        fixed:
-            at tv_qte_roll_down
+            at tv_roll_down
             pos (0, 0)
 
-            # Static QTE target sprites in weapon-specific positioning (resolved once at stage start)
-            if combat_service is not None and combat_service.qte_active and combat_service.current_targets:
-                for target in combat_service.current_targets:
-                    add target.sprite:
-                        pos (target.x, target.y)
-                        anchor (0.5, 0.5)
-            else:
-                $ fallback_weapon_type = "ARC" if "Knife" in active_weapon_name else "SQUARE"
-                $ fallback_sprite = "images/combat/qte_knife.png" if "Knife" in active_weapon_name else "images/combat/qte_hammer.png"
-                $ fallback_positions = generate_qte_positions(layout_type=fallback_weapon_type, num_points=(5 if fallback_weapon_type == "ARC" else 4), pattern_params=({"length": 650, "curvature": 0.45, "center_x": 960, "center_y": 540} if fallback_weapon_type == "ARC" else {"size": 360, "center_x": 960, "center_y": 540}), randomize_shape=False)
-                for (tx, ty) in fallback_positions:
-                    add fallback_sprite:
-                        pos (tx, ty)
-                        anchor (0.5, 0.5)
+            # Distorted TV Screen Lens & Noise Filter
+            fixed:
+                pos (100, 100)
+                xsize 1720
+                ysize 980
+                clipping True
 
-            # Static stage countdown number (2) and live time countdown (10->0) rolling down with TV screen at bottom-left
-            $ display_time = int(round(combat_service.qte_time_remaining)) if (combat_service is not None and combat_service.qte_active) else 10
-            hbox:
-                pos (220, 880)
-                anchor (0.0, 1.0)
-                spacing 50
-                text "2" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
-                text "[display_time]" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
+                # Distorted Background Image inside TV lens
+                add "images/combat/bg_combat.png":
+                    pos (-100, -100)
+                    fit "cover"
+                    at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
+
+                # Distorted Enemy Sprite inside TV lens
+                add "tendril_small_idle":
+                    align (0.5, 0.5)
+                    at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
+
+                # Enemy Hit Flash Overlay inside TV screen
+                if combat_service is not None and combat_service.show_hit_overlay:
+                    add combat_service.enemy.hit_overlay_sprite:
+                        align (0.5, 0.5)
+
+            # TV Screen Border Overlay
+            add "images/combat/tv_border.png":
+                xsize 1920
+                ysize 1080
+                fit "fill"
+
+            # Static QTE Sprites & Bottom-Left Countdown Numbers
+            fixed:
+                pos (0, 0)
+
+                # Static QTE target sprites in weapon-specific positioning (resolved once at stage start)
+                if combat_service is not None and combat_service.qte_active and combat_service.current_targets:
+                    for target in combat_service.current_targets:
+                        add target.sprite:
+                            pos (target.x, target.y)
+                            anchor (0.5, 0.5)
+                else:
+                    $ fallback_weapon_type = "ARC" if "Knife" in active_weapon_name else "SQUARE"
+                    $ fallback_sprite = "images/combat/qte_knife.png" if "Knife" in active_weapon_name else "images/combat/qte_hammer.png"
+                    $ fallback_positions = generate_qte_positions(layout_type=fallback_weapon_type, num_points=(5 if fallback_weapon_type == "ARC" else 4), pattern_params=({"length": 650, "curvature": 0.45, "center_x": 960, "center_y": 540} if fallback_weapon_type == "ARC" else {"size": 360, "center_x": 960, "center_y": 540}), randomize_shape=False)
+                    for (tx, ty) in fallback_positions:
+                        add fallback_sprite:
+                            pos (tx, ty)
+                            anchor (0.5, 0.5)
+
+                # Static stage countdown number (2) and live time countdown (10->0) rolling down with TV screen at bottom-left
+                $ display_time = int(round(combat_service.qte_time_remaining)) if (combat_service is not None and combat_service.qte_active) else 10
+                hbox:
+                    pos (220, 880)
+                    anchor (0.0, 1.0)
+                    spacing 50
+                    text "2" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
+                    text "[display_time]" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
 
     # 7. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
     fixed:
