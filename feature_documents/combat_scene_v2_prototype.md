@@ -45,7 +45,7 @@ The screen displayables in `screen combat_main_v2` are ordered strictly from bac
 ### Layer 3: Player Health Panel (Top-Left Roll-Down)
 - **Base Asset**: `images/combat/ui/health_screen.png`
 - **ATL Transform (`health_panel_roll_down`)**:
-  - Starts offscreen top: `pos (120, -200)`
+  - Starts offscreen top: `pos (120, -400)`
   - Slides down over 0.6s with `easein` to rest at `pos (120, 0)` (flushed against the top of the screen).
 - **Numeric Health Text Overlay**:
   - Expression: `[active_hp]` (pulls from `combat_service.player.hp` or fallback variable `player_hp`).
@@ -106,7 +106,7 @@ For fast context resumption in future coding sessions, below is the exact coordi
 | **Weapon Toggle Button** | Control Panel | `pos (220, 110)`, `anchor (0.5, 0.5)` | Hover `zoom 1.15` |
 | **Fight Button** | Control Panel HBox | `align (0.5, 0.5)` | `xoffset -80`, `yoffset 100` |
 | **Heal Button** | Control Panel HBox | `align (0.5, 0.5)` | `at Transform(zoom=0.9)`, `xoffset 60`, `yoffset 100` |
-| **Unified TV Container** | Screen Root | `pos (0, 0)` resting | Unified Roll-down `tv_roll_down`: `pos (0, -1080)` -> `pos (0, 0)` (`1920x1080`) |
+| **Unified TV Container** | Screen Root | Transform Controlled | Unified Roll-down `tv_roll_down`: `pos (0, -1080)` -> `pos (0, 0)`; Roll-up `tv_roll_up`: `pos (0, -1080)` |
 | **TV Distortion Lens** | Unified TV Container | `pos (100, 100)` static | `xsize 1720, ysize 980`, `clipping True` |
 | **TV Border Overlay** | Unified TV Container | `pos (0, 0)` static | `xsize 1920, ysize 1080` (`fit "fill"`) |
 | **Static QTE & Countdown** | Unified TV Container | `pos (0, 0)` static | Static QTE sprites & bottom-left countdown `hbox pos (220, 880)` |
@@ -131,11 +131,93 @@ When the player clicks the **Fight** button, `combat_main_v2` triggers a multi-s
 3. **Unified TV Scene Roll-Down (`tv_roll_down`)**:
    - Pauses `0.2s` for panels to clear, then rolls down the entire TV scene container (Distortion Lens, TV Border frame, static QTE targets, and countdown numbers) as a single unified container from `pos (0, -1080)` to `pos (0, 0)` over `0.6s` (`easein`).
    - Inside the container, heavy static noise versions of `bg_combat.png` (`pos (-100, -100)`) and `tendril_small_idle` (`align (0.5, 0.5)`) render with extreme noise and scanline distortion parameters: `film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)` clipped to the aperture bounds (`clipping True`).
+4. **Unified TV Scene Roll-Up on Exit/Countdown Finish (`tv_roll_up`)**:
+   - **Initial Scene Load (`tv_offscreen`)**: Before the first fight (`tv_started = False`), evaluates `tv_offscreen` (`pos (0, -1080)`), placing the container offscreen immediately with 0 initial movement or flash.
+   - **Fight Exit / Countdown Expiry (`tv_roll_up`)**: When `fight_mode` sets to `False` after fight start (`tv_started = True`), `timer 0.1` stops ticking and `tv_roll_up` smoothly rolls the container up behind the upper screen border over `0.5s` (`easein 0.5 pos (0, -1080)`) while Health Panel rolls down (`health_panel_roll_down`) and UI Control Panel rolls up (`action_panel_roll_up`).
 
 ---
 
-## 7. Roadmap for Next Development Phase
+## 7. TV Container Roll Transform Architecture, Obstacles & Final Solution
+
+During the development of the TV Fight Mode Container roll-down and roll-up transition system, several subtle Ren'Py Screen Language and ATL execution obstacles were encountered and systematically solved.
+
+### A. Obstacles Encountered
+
+1. **Component Desynchronization (Multiple Independent Transforms)**:
+   - *Issue*: Initially, the TV lens filter, TV border frame, and QTE targets were separate displayables with independent ATL transforms (`tv_distortion_roll_down`, `tv_border_roll_down`, `tv_qte_roll_down`).
+   - *Impact*: Slight frame timing differences between displayable evaluations caused the TV border and inner lens to slide down at mismatched offsets.
+   - *Fix*: Grouped all TV fight mode elements into a single `fixed` parent container with a single transform.
+
+2. **ATL Event `on show` / `on hide` Reset on Screen Refresh Timers**:
+   - *Issue*: `screen combat_main_v2` uses `timer 0.1 repeat True` to tick the QTE countdown every 0.1s.
+   - *Impact*: When an ATL transform relies on `on show:` / `on hide:` without `on replace:`, every 0.1s timer tick triggers an `on replace` event, resetting the transform to default position coordinates and freezing/snapping the displayable at screen center.
+
+3. **Inconsistent Event Dispatch in Dynamic `at (A if cond else B)` Expressions**:
+   - *Issue*: Ren'Py's screen engine does not reliably dispatch `replace` events to ATL `on replace:` handlers inside dynamic Python `at` expressions when screen state variables change.
+   - *Impact*: Handlers wrapped in `on replace:` were bypassed, causing `tv_roll_up` to fall back to `on show:` (which set `pos (0, -1080)` immediately), snapping offscreen without playing a roll-up animation.
+
+4. **Container Property `pos (0, 0)` Overriding ATL Interpolation**:
+   - *Issue*: Specifying property `pos (0, 0)` on the outer container (`fixed: pos (0, 0)`) forced Ren'Py to reset the displayable base position to `(0, 0)` on every screen re-evaluation.
+   - *Impact*: Prevented `tv_roll_up`'s `easein` from smoothly interpolating from `(0, 0)` to `(0, -1080)`, locking the screen in place when the timer finished.
+
+5. **Initial Scene Load Flash / Roll-Up**:
+   - *Issue*: On scene start (`fight_mode = False`), evaluating `tv_roll_up` (`easein 0.5 pos (0, -1080)`) animated the container from `(0, 0)` to `(0, -1080)` on start-up.
+   - *Impact*: The TV screen briefly flashed on screen and rolled up when `combat_test_scene2` first opened.
+
+---
+
+### B. Final Architectural Solution
+
+The final architecture achieves flawless 60 FPS roll-down on enter, zero motion on scene start, and smooth 0.5s roll-up on timer finish by combining **State-Driven Transform Selection**, **Unconditional ATL Statements**, and **Scoped Screen Timers**:
+
+#### 1. Unconditional ATL Statements (No `on` Handlers)
+```renpy
+# Static offscreen position for scene load
+transform tv_offscreen:
+    subpixel True
+    pos (0, -1080)
+
+# Unconditional roll-down sequence
+transform tv_roll_down:
+    subpixel True
+    pos (0, -1080)
+    pause 0.2
+    easein 0.6 pos (0, 0)
+
+# Unconditional roll-up sequence
+transform tv_roll_up:
+    subpixel True
+    easein 0.5 pos (0, -1080)
+```
+
+#### 2. Screen State Tracking (`tv_started`)
+In `screen combat_main_v2`:
+- `default fight_mode = False`
+- `default tv_started = False`
+- FIGHT Button Action:
+  ```renpy
+  action [
+      SetScreenVariable("fight_mode", True),
+      SetScreenVariable("tv_started", True),
+      If(combat_service is not None, Function(combat_service.start_qte_phase), NullAction())
+  ]
+  ```
+
+#### 3. State-Driven Container Transform Binding
+```renpy
+fixed:
+    at (tv_roll_down if fight_mode else (tv_roll_up if tv_started else tv_offscreen))
+```
+
+#### 4. Scoped Screen Timer
+```renpy
+if combat_service is not None and (combat_service.qte_active or combat_service.show_hit_overlay):
+    timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)
+```
+
+---
+
+## 8. Roadmap for Next Development Phase
 When continuing in the next session, we will proceed with:
 1. **QTE Target Overlay Integration**: Render weapon-specific QTE target overlays (`combat_tv_qte_overlay`) inside the active TV frame area.
 2. **Damage & Enemy Feedback**: Connect hit flash overlays (`enemy_hit.gif`), body part damage tracking, and combat log updates when targets are hit or missed.
-
