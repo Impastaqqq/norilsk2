@@ -174,41 +174,51 @@ testsuite combat_service_tests:
             renpy.hide_screen("combat_main")
         pause 0.01
 
+    testcase test_dynamic_qte_distortion_ratio:
+        python:
+            service = CombatService()
+            knife = create_weapon_from_db("Knife")
+            service.start_combat(knife)
+            service.start_qte_phase()
 
-# testsuite disabled_combat_e2e_ui_tests:
-#     setup:
-#         python:
-#             from renpy.test.testsettings import _test
-#             _test.timeout = 15.0
-# 
-#     testcase test_e2e_combat_button_clicks:
-#         # 1. Start Combat & Render Screen
-#         $ test_service = CombatService()
-#         $ test_service.start_combat(create_weapon_from_db("Knife"))
-#         $ renpy.show_screen("combat_main", combat_service=test_service)
-#         pause 0.2
-# 
-#         # 2. Imitate User Action: Click "FIGHT (QTE)" screen button by matching rendered UI text
-#         click "FIGHT (QTE)"
-#         pause 0.2
-#         $ assert test_service.qte_active, "QTE should be active after clicking FIGHT (QTE) button"
-# 
-#         # 3. Imitate User Actions: Click QTE target buttons
-#         python:
-#             while test_service.qte_active and test_service.current_stage <= test_service.total_stages:
-#                 targets = list(test_service.current_targets)
-#                 for target in targets:
-#                     test_service.click_target(target.target_id)
-# 
-#         pause 0.2
-# 
-#         # 4. Assert Damage Dealt & UI state after E2E UI clicks
-#         $ assert not test_service.qte_active, "QTE should finish"
-#         $ assert test_service.enemy.current_hp == 30, f"Expected 30 HP remaining, got {test_service.enemy.current_hp}"
-#         $ assert test_service.show_hit_overlay, "Hit overlay should be active"
-# 
-#         $ renpy.hide_screen("combat_main")
+            assert service.total_qte_targets == 10, f"Expected 10 total targets for Knife, got {service.total_qte_targets}"
+            assert service.hit_qte_targets == 0, f"Expected 0 hit targets initially, got {service.hit_qte_targets}"
+            assert abs(service.distortion_ratio - 1.0) < 0.001, f"Expected initial ratio 1.0, got {service.distortion_ratio}"
+            assert service.remaining_stages == 2, f"Expected remaining_stages == 2 in Stage 1, got {service.remaining_stages}"
 
+            # Hit 5 targets in Stage 1
+            for target in list(service.current_targets):
+                service.click_target(target.target_id)
+
+            assert service.hit_qte_targets == 5, f"Expected 5 hit targets after Stage 1, got {service.hit_qte_targets}"
+            assert abs(service.distortion_ratio - 0.5) < 0.001, f"Expected ratio 0.5 after 5 hits, got {service.distortion_ratio}"
+            assert service.remaining_stages == 1, f"Expected remaining_stages == 1 in Stage 2, got {service.remaining_stages}"
+
+            # Hit remaining 5 targets in Stage 2
+            for target in list(service.current_targets):
+                service.click_target(target.target_id)
+
+            assert service.hit_qte_targets == 10, f"Expected 10 hit targets, got {service.hit_qte_targets}"
+            assert abs(service.distortion_ratio - 0.0) < 0.001, f"Expected ratio 0.0 (clean image) when all targets hit, got {service.distortion_ratio}"
+        pause 0.01
+
+    testcase test_combat_main_v2_screen_flow:
+        python:
+            service = CombatService()
+            knife = create_weapon_from_db("Knife")
+            service.start_combat(knife)
+
+            renpy.show_screen("combat_main_v2", combat_service=service)
+            assert service.enemy.current_hp == 50, f"Expected initial enemy HP 50, got {service.enemy.current_hp}"
+            assert not service.qte_active, "QTE should be initially inactive"
+
+            # Check HP breakpoint logic (<= 50% max HP)
+            assert service.enemy.current_hp > (service.enemy.max_hp / 2), "Initial HP should be above 50% breakpoint"
+            service.enemy.current_hp = 20
+            assert service.enemy.current_hp <= (service.enemy.max_hp / 2), "Damaged HP (20) should be at/below 50% breakpoint"
+
+            renpy.hide_screen("combat_main_v2")
+        pause 0.01
 
 
 

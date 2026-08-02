@@ -9,6 +9,8 @@ label start:
                 pass
             "Test Combat Prototype":
                 jump combat_test_scene
+            "Test Combat v2 Prototype":
+                jump combat_test_scene2
             "Test Screen Prototype":
                 jump test_tv_combat_scene
 
@@ -30,7 +32,7 @@ label start:
     "day 1..."
     hide window
 
-    scene d12-3 with fade
+    scene day1 d12-3 with fade
 
     pause 1.0
 
@@ -44,11 +46,11 @@ label start:
 
     "While Digging they found nothing useful and nearly couldn’t complete the operation but eventually…"
 
-    scene d14 with fade
+    scene day1 d14 with fade
 
     "they hit something…"
 
-    scene d15 with fade
+    scene day1 d15 with fade
 
     "And something was released…"
 
@@ -56,7 +58,7 @@ label start:
 
     pause 1.0
 
-    scene d7 with dissolve
+    scene day1 d7 with dissolve
 
     "you were 12 when the apocalypse happened"
 
@@ -68,7 +70,7 @@ label start:
 
     "No scientist survived that project…"
 
-    scene d19 with fade
+    scene day1 d19 with fade
 
     "after it began your father traveled with you to teach you how to survive"
 
@@ -78,16 +80,16 @@ label start:
 
     "he died..."
 
-    scene d111 with dissolve
+    scene day1 d111 with dissolve
 
     "The only thing he left was the knowledge he gave you and the radio he made"
 
     window hide
 
-    scene blank with dissolve
+    scene day1 blank with dissolve
 
     play sound "time.mp3" volume 1.50
-    show tutorial with moveinleft:
+    show day1 tutorial with moveinleft:
         xpos 0.11
         ypos 0.00
 

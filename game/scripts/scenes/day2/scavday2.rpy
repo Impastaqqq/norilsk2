@@ -32,7 +32,7 @@ label scavday2:
             window hide
             play sound "audio/lightswitch.mp3" volume 1.2 fadeout 1.0
             pause 1.0
-            scene frontroomd2 with fade
+            scene day2 frontroomd2 with fade
             pause 2.0
             scene black with fade
             show text "you have [scav] awareness." at top
@@ -44,7 +44,7 @@ label scavday2:
             play sound "audio/lightswitch.mp3" volume 1.2 fadeout 1.0
             window hide
             pause 1.0
-            scene backroomd2 with fade
+            scene day2 backroomd2 with fade
             pause 2.0
             scene black with fade
             show text "you have [scav] awareness." at top
@@ -54,7 +54,7 @@ label scavday2:
         "turn lights on again +2 awareness":
             window hide
             $ scav += 2
-            scene frontroomd2 with fade
+            scene day2 frontroomd2 with fade
             pause 2.0
             scene black with fade
             jump beforefront

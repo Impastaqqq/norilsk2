@@ -12,6 +12,14 @@
 /game/**/*.new
 /game/**/*.old
 
+# Krita temp files
+/game/**/*.kra~
+/game/**/*.png~
+/game/**/*.jpg~
+/game/**/*.kra-autosave.kra
+/game/**/*.png-autosave.kra
+/game/**/*.jpg-autosave.kra
+
 # VSCode Ren'Py Warp library files
 vscode_renpy_warp_*.rpe*
 

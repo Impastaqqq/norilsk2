@@ -3,7 +3,7 @@
 label end1st:
     pause
     window hide
-    $ renpy.movie_cutscene("images/death1.webm")
+    $ renpy.movie_cutscene("images/day1/death1.webm")
     show black with fade
 
     window show

@@ -63,11 +63,11 @@ label scavenge1st:
             play sound "audio/lightswitch.mp3" volume 1.2 fadeout 1.0
             pause 1.0
 
-            scene rightbg with dissolve
+            scene day1 rightbg with dissolve
 
             pause 2.0
 
-            scene rightbgblack with fade
+            scene day1 rightbgblack with fade
 
             show text "you have [scav] awareness." at top
 
@@ -83,10 +83,10 @@ label scavenge1st:
             play sound "audio/lightswitch.mp3" volume 1.2 fadeout 1.0
             pause 1.0
 
-            scene middlebg with fade
+            scene day1 middlebg with fade
 
             pause 2.0
-            scene middlebgblack with fade
+            scene day1 middlebgblack with fade
             show text "you have [scav] awareness." at top
             jump beforemiddle
 
@@ -100,10 +100,10 @@ label scavenge1st:
             play sound "audio/lightswitch.mp3" volume 1.2 fadeout 1.0
             pause 1.0
 
-            scene leftbg with fade
+            scene day1 leftbg with fade
             pause 2.0
 
-            scene leftbgblack with fade
+            scene day1 leftbgblack with fade
 
             show text "you have [scav] awareness." at top
             jump beforeleft
@@ -272,7 +272,7 @@ label scavenge1st:
                 play sound "audio/pickup.mp3" volume 1.2 fadeout 1.0
                 pause 1.0
                 "you pick up the knife"
-                show knifefound at appear_top:
+                show day1 knifefound at appear_top:
                     zoom 1.0
                     xpos 0.86
                     ypos 1.00
@@ -322,7 +322,7 @@ label scavenge1st:
         "take the knife":
             $ scav += 1
             $ weapon = 1
-            show knifefound at appear_top:
+            show day1 knifefound at appear_top:
                 zoom 1.0
                 xpos 0.86
                 ypos 1.00
