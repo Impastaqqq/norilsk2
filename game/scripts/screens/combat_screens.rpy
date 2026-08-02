@@ -331,7 +331,7 @@ screen combat_main_v2(combat_service=None):
                         anchor (0.5, 0.5)
 
             # Live stage countdown number and live time countdown (10->0) rolling down with TV screen at bottom-left
-            $ display_stage = combat_service.current_stage if (combat_service is not None and combat_service.qte_active) else 1
+            $ display_stage = combat_service.remaining_stages if (combat_service is not None and combat_service.qte_active) else 2
             $ display_time = int(round(combat_service.qte_time_remaining)) if (combat_service is not None and combat_service.qte_active) else 10
             hbox:
                 pos (220, 880)

@@ -249,3 +249,8 @@ init -1 python:
             hits = self.hit_qte_targets
             return max(0.0, 1.0 - (float(hits) / float(total)))
 
+        @property
+        def remaining_stages(self) -> int:
+            return max(1, self.total_stages - self.current_stage + 1)
+
+
