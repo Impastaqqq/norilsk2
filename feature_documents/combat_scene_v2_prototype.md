@@ -217,7 +217,30 @@ if combat_service is not None and (combat_service.qte_active or combat_service.s
 
 ---
 
-## 8. Roadmap for Next Development Phase
+---
+
+## 8. QTE Target Interactivity, Live Countdown & Damage Calculation Lifecycle
+
+In Prototype v2, QTE interaction is fully wired into `CombatService` (`combat_main_v2`):
+
+1. **Interactive QTE Buttons**:
+   - Inside the TV screen container, active stage targets (`combat_service.current_targets`) render as interactive `imagebutton` elements bound to `action Function(combat_service.click_target, target.target_id)`.
+   - On click, `target.mark_hit()` sets target opacity to 50% (`alpha=0.5`) and disables further clicks (`sensitive (not target.is_clicked)`).
+   - Upon completing all targets in a stage, `combat_service` advances automatically to the next stage or triggers `evaluate_qte_result()`.
+
+2. **Live TV Countdown Display**:
+   - Inside the TV frame container at bottom-left (`pos (220, 880)`), the UI displays the active stage number (`combat_service.current_stage`) and live time remaining countdown (`int(round(combat_service.qte_time_remaining))`).
+   - The countdown ticks down continuously every 0.1s (`timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)`).
+
+3. **Damage Calculation & Exit Transition**:
+   - When all targets across all stages are clicked (or timer expires at 0s), `combat_service.evaluate_qte_result()` calculates weapon damage (Slashing 100% combo for min_damage; Blunt ratio * base roll + stun on 100%), applies damage to enemy HP, updates body part thresholds, and executes enemy counterattack.
+   - Screen check `if combat_service is not None and fight_mode and not combat_service.qte_active:` transitions `fight_mode = False`.
+   - The TV frame rolls back up (`tv_roll_up`), while the Player Health Panel rolls back down displaying updated player HP, and the Enemy Hit Flash overlay decays over 1s inside the TV screen.
+
+---
+
+## 9. Roadmap for Next Development Phase
 When continuing in the next session, we will proceed with:
-1. **QTE Target Overlay Integration**: Render weapon-specific QTE target overlays (`combat_tv_qte_overlay`) inside the active TV frame area.
-2. **Damage & Enemy Feedback**: Connect hit flash overlays (`enemy_hit.gif`), body part damage tracking, and combat log updates when targets are hit or missed.
+1. **GLSL Film Grain & CRT Shader Integration**: Enhance TV screen noise with dynamic GLSL fragment shaders (`film_grain`).
+2. **Advanced Sound Effects & VFX**: Integrate hit impact audio, QTE click sfx, and body part break animations.
+

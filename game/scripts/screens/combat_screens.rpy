@@ -296,21 +296,25 @@ screen combat_main_v2(combat_service=None):
                     align (0.5, 0.5)
 
         # TV Screen Border Overlay
-        add "images/combat/tv_border.png":
+        add "images/combat/tv_borderv2.png":
             xsize 1920
             ysize 1080
             fit "fill"
 
-        # Static QTE Sprites & Bottom-Left Countdown Numbers
+        # Interactive QTE Targets & Bottom-Left Countdown Numbers
         fixed:
             pos (0, 0)
 
-            # Static QTE target sprites in weapon-specific positioning (resolved once at stage start)
+            # Active interactive QTE targets in weapon-specific positioning
             if combat_service is not None and combat_service.qte_active and combat_service.current_targets:
                 for target in combat_service.current_targets:
-                    add target.sprite:
+                    imagebutton:
+                        idle Transform(target.sprite, alpha=target.opacity)
+                        hover Transform(target.sprite, alpha=target.opacity)
                         pos (target.x, target.y)
                         anchor (0.5, 0.5)
+                        action Function(combat_service.click_target, target.target_id)
+                        sensitive (not target.is_clicked)
             else:
                 $ fallback_weapon_type = "ARC" if "Knife" in active_weapon_name else "SQUARE"
                 $ fallback_sprite = "images/combat/qte_knife.png" if "Knife" in active_weapon_name else "images/combat/qte_hammer.png"
@@ -320,13 +324,14 @@ screen combat_main_v2(combat_service=None):
                         pos (tx, ty)
                         anchor (0.5, 0.5)
 
-            # Static stage countdown number (2) and live time countdown (10->0) rolling down with TV screen at bottom-left
+            # Live stage countdown number and live time countdown (10->0) rolling down with TV screen at bottom-left
+            $ display_stage = combat_service.current_stage if (combat_service is not None and combat_service.qte_active) else 1
             $ display_time = int(round(combat_service.qte_time_remaining)) if (combat_service is not None and combat_service.qte_active) else 10
             hbox:
                 pos (220, 880)
                 anchor (0.0, 1.0)
                 spacing 50
-                text "2" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
+                text "[display_stage]" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
                 text "[display_time]" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
 
     # 7. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
