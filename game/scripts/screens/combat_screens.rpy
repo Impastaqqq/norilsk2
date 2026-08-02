@@ -259,6 +259,10 @@ screen combat_main_v2(combat_service=None):
     $ weapon_icon = "images/combat/weapons/knife1.png" if "Knife" in active_weapon_name else "images/combat/weapons/hammer1.png"
     $ next_weapon = "Hammer" if "Knife" in active_weapon_name else "Knife"
 
+    # Automatic TV screen roll-up when QTE phase completes
+    if combat_service is not None and fight_mode and not combat_service.qte_active:
+        $ fight_mode = False
+
     # 1. Base Clean Background Combat Image (Full 1920x1080 screen)
     add "images/combat/bg_combat.png":
         fit "cover"
@@ -318,13 +322,14 @@ screen combat_main_v2(combat_service=None):
                         pos (tx, ty)
                         anchor (0.5, 0.5)
 
-            # Static countdown numbers (2 and 10) rolling down with TV screen at bottom-left (10 offset by 50px right)
+            # Static stage countdown number (2) and live time countdown (10->0) rolling down with TV screen at bottom-left
+            $ display_time = int(round(combat_service.qte_time_remaining)) if (combat_service is not None and combat_service.qte_active) else 10
             hbox:
                 pos (220, 880)
                 anchor (0.0, 1.0)
                 spacing 50
                 text "2" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
-                text "10" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
+                text "[display_time]" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
 
     # 7. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
     fixed:
