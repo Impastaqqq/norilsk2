@@ -116,7 +116,8 @@ init -1 python:
         num_points: int,
         pattern_params: Dict[str, Any],
         screen_width: int = 1920,
-        screen_height: int = 1080
+        screen_height: int = 1080,
+        randomize_shape: bool = True
     ) -> List[Tuple[int, int]]:
         """
         Dispatches QTE position calculation based on weapon layout type.
@@ -127,11 +128,11 @@ init -1 python:
         if layout_type == "ARC":
             length = pattern_params.get("length", 600)
             curvature = pattern_params.get("curvature", 0.4)
-            return generate_knife_arc(center_x, center_y, length, curvature, num_points, randomize_shape=True)
+            return generate_knife_arc(center_x, center_y, length, curvature, num_points, randomize_shape=randomize_shape)
 
         elif layout_type == "SQUARE":
             size = pattern_params.get("size", 350)
-            return generate_hammer_square(center_x, center_y, size, num_points, randomize_shape=True)
+            return generate_hammer_square(center_x, center_y, size, num_points, randomize_shape=randomize_shape)
 
         else:
             # Fallback random scatter

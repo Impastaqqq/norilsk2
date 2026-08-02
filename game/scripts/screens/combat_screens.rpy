@@ -234,6 +234,14 @@ transform tv_distortion_roll_down:
     easein 0.6 pos (100, 100)
 
 
+# ATL transform for TV QTE elements rolling down into view in sync with TV border
+transform tv_qte_roll_down:
+    subpixel True
+    pos (0, -1080)
+    pause 0.2
+    easein 0.6 pos (0, 0)
+
+
 screen combat_main_v2(combat_service=None):
     modal True
     default current_weapon = "Knife"
@@ -267,13 +275,13 @@ screen combat_main_v2(combat_service=None):
             ysize 980
             clipping True
 
-            # Distorted Background Image inside TV lens (Dynamic noise reduction as QTE targets are hit)
+            # Distorted Background Image inside TV lens
             add "images/combat/bg_combat.png":
                 pos (-100, -100)
                 fit "cover"
                 at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
 
-            # Distorted Enemy Sprite inside TV lens (Dynamic noise reduction as QTE targets are hit)
+            # Distorted Enemy Sprite inside TV lens
             add "tendril_small_idle":
                 align (0.5, 0.5)
                 at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
@@ -289,6 +297,34 @@ screen combat_main_v2(combat_service=None):
             xsize 1920
             ysize 1080
             fit "fill"
+
+        # 5. Static QTE Sprites & Bottom-Left Countdown Numbers (Rolls down in sync with TV screen)
+        fixed:
+            at tv_qte_roll_down
+            pos (0, 0)
+
+            # Static QTE target sprites in weapon-specific positioning (resolved once at stage start)
+            if combat_service is not None and combat_service.qte_active and combat_service.current_targets:
+                for target in combat_service.current_targets:
+                    add target.sprite:
+                        pos (target.x, target.y)
+                        anchor (0.5, 0.5)
+            else:
+                $ fallback_weapon_type = "ARC" if "Knife" in active_weapon_name else "SQUARE"
+                $ fallback_sprite = "images/combat/qte_knife.png" if "Knife" in active_weapon_name else "images/combat/qte_hammer.png"
+                $ fallback_positions = generate_qte_positions(layout_type=fallback_weapon_type, num_points=(5 if fallback_weapon_type == "ARC" else 4), pattern_params=({"length": 650, "curvature": 0.45, "center_x": 960, "center_y": 540} if fallback_weapon_type == "ARC" else {"size": 360, "center_x": 960, "center_y": 540}), randomize_shape=False)
+                for (tx, ty) in fallback_positions:
+                    add fallback_sprite:
+                        pos (tx, ty)
+                        anchor (0.5, 0.5)
+
+            # Static countdown numbers (2 and 10) rolling down with TV screen at bottom-left (10 offset by 50px right)
+            hbox:
+                pos (220, 880)
+                anchor (0.0, 1.0)
+                spacing 50
+                text "2" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
+                text "10" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
 
     # 7. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
     fixed:
