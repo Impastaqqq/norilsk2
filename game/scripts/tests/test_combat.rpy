@@ -202,6 +202,25 @@ testsuite combat_service_tests:
             assert abs(service.distortion_ratio - 0.0) < 0.001, f"Expected ratio 0.0 (clean image) when all targets hit, got {service.distortion_ratio}"
         pause 0.01
 
+    testcase test_combat_main_v2_screen_flow:
+        python:
+            service = CombatService()
+            knife = create_weapon_from_db("Knife")
+            service.start_combat(knife)
+
+            renpy.show_screen("combat_main_v2", combat_service=service)
+            assert service.enemy.current_hp == 50, f"Expected initial enemy HP 50, got {service.enemy.current_hp}"
+            assert not service.qte_active, "QTE should be initially inactive"
+
+            # Check HP breakpoint logic (<= 50% max HP)
+            assert service.enemy.current_hp > (service.enemy.max_hp / 2), "Initial HP should be above 50% breakpoint"
+            service.enemy.current_hp = 20
+            assert service.enemy.current_hp <= (service.enemy.max_hp / 2), "Damaged HP (20) should be at/below 50% breakpoint"
+
+            renpy.hide_screen("combat_main_v2")
+        pause 0.01
+
+
 
 
 

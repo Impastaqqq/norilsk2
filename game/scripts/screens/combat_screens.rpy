@@ -180,16 +180,24 @@ image tendril_small_idle:
     repeat
 
 
+# Animated tendril small enemy sprite (damaged / half-hp state)
+image tendril_small_half:
+    "images/combat/enemies/tendril_small/small_half.png"
+    pause 0.2
+    "images/combat/enemies/tendril_small/small_half2.png"
+    pause 0.2
+    "images/combat/enemies/tendril_small/small_half3.png"
+    pause 0.2
+    repeat
+
+
 # ATL transform for UI control panel rolling from below the screen
 transform action_panel_roll_up:
     subpixel True
     yanchor 1.0
     xanchor 0.5
-    on show:
-        pos (960, 1800)
-        easein 0.6 pos (960, 1080)
-    on replace:
-        easein 0.5 pos (960, 1080)
+    pos (960, 1800)
+    easein 0.6 pos (960, 1080)
 
 # ATL transform for UI control panel rolling down completely behind screen
 transform action_panel_roll_down:
@@ -204,11 +212,8 @@ transform health_panel_roll_down:
     subpixel True
     yanchor 0.0
     xanchor 0.0
-    on show:
-        pos (120, -400)
-        easein 0.6 pos (120, 0)
-    on replace:
-        easein 0.5 pos (120, 0)
+    pos (120, -400)
+    easein 0.6 pos (120, 0)
 
 # ATL transform for player health panel rolling up completely behind screen
 transform health_panel_roll_up:
@@ -245,16 +250,25 @@ screen combat_main_v2(combat_service=None):
     default player_max_hp = 100
     default fight_mode = False
     default tv_started = False
+    default show_debug_menu = False
+    default combat_log_adj = ui.adjustment()
+    default last_log_len = 0
 
-    # Timer tick for QTE countdown & hit overlay decay
-    if combat_service is not None and (combat_service.qte_active or combat_service.show_hit_overlay):
+    # Timer tick for QTE countdown
+    if combat_service is not None and combat_service.qte_active:
         timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)
+
+    # Auto-scroll log viewport when new entries are added
+    if combat_service is not None and len(combat_service.log.entries) != last_log_len:
+        $ last_log_len = len(combat_service.log.entries)
+        $ combat_log_adj.change(999999)
 
     $ active_hp = combat_service.player.hp if combat_service is not None else player_hp
     $ active_max_hp = combat_service.player.max_hp if combat_service is not None else player_max_hp
     $ active_weapon_name = combat_service.player.equipped_weapon.name if combat_service is not None else current_weapon
     $ weapon_icon = "images/combat/weapons/knife1.png" if "Knife" in active_weapon_name else "images/combat/weapons/hammer1.png"
     $ next_weapon = "Hammer" if "Knife" in active_weapon_name else "Knife"
+    $ active_enemy_sprite = "tendril_small_half" if (combat_service is not None and combat_service.enemy.current_hp <= combat_service.enemy.max_hp / 2) else "tendril_small_idle"
 
     # Automatic TV screen roll-up when QTE phase completes
     if combat_service is not None and fight_mode and not combat_service.qte_active:
@@ -271,7 +285,7 @@ screen combat_main_v2(combat_service=None):
         fit "cover"
 
     # 2. Base Clean Animated Enemy Sprite (Middle of screen)
-    add "tendril_small_idle":
+    add active_enemy_sprite:
         align (0.5, 0.5)
 
     # 3. Unified TV Fight Mode Container (Distortion Lens, Border Frame & QTE Overlay roll down together)
@@ -292,14 +306,9 @@ screen combat_main_v2(combat_service=None):
                 at film_grain(strength=cur_strength, speed=45.0, size=4.0, distortion=cur_distortion)
 
             # Distorted Enemy Sprite inside TV lens
-            add "tendril_small_idle":
+            add active_enemy_sprite:
                 align (0.5, 0.5)
                 at film_grain(strength=cur_strength, speed=45.0, size=4.0, distortion=cur_distortion)
-
-            # Enemy Hit Flash Overlay inside TV screen
-            if combat_service is not None and combat_service.show_hit_overlay:
-                add combat_service.enemy.hit_overlay_sprite:
-                    align (0.5, 0.5)
 
         # TV Screen Border Overlay
         add "images/combat/tv_borderv2.png":
@@ -340,7 +349,38 @@ screen combat_main_v2(combat_service=None):
                 text "[display_stage]" size 36 bold True color "#ffffff" outlines [(2, "#000000", 0, 0)]
                 text "[display_time]" size 36 bold True color "#ff5555" outlines [(2, "#000000", 0, 0)]
 
-    # 7. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
+    # 4. Enemy Status & Body Parts Bar (Top Center, visible out of fight mode)
+    if combat_service is not None and not fight_mode:
+        frame:
+            pos (960, 40)
+            anchor (0.5, 0.0)
+            background "#10121ad0"
+            padding (20, 10)
+            hbox:
+                spacing 20
+                text "[combat_service.enemy.name] (HP: [combat_service.enemy.current_hp]/[combat_service.enemy.max_hp])" size 18 bold True color "#ffffff"
+                for part in combat_service.enemy.body_parts:
+                    if part.is_broken:
+                        text "[part.name]: [[BROKEN]]" color "#ff4444" size 16 outlines [(1, "#000000", 0, 0)]
+                    else:
+                        text "[part.name]: [[INTACT]]" color "#44ff44" size 16 outlines [(1, "#000000", 0, 0)]
+
+    # 5. Victory / Defeat Overlay Message
+    if combat_service is not None and not fight_mode:
+        if combat_service.enemy.current_hp <= 0:
+            frame:
+                align (0.5, 0.4)
+                background "#102610e6"
+                padding (30, 20)
+                text "VICTORY!" size 40 bold True color "#44ff44" outlines [(2, "#000000", 0, 0)]
+        elif combat_service.player.hp <= 0:
+            frame:
+                align (0.5, 0.4)
+                background "#261010e6"
+                padding (30, 20)
+                text "DEFEAT!" size 40 bold True color "#ff4444" outlines [(2, "#000000", 0, 0)]
+
+    # 6. Player Health Panel (rolls down on enter, rolls up behind screen on fight)
     fixed:
         at (health_panel_roll_up if fight_mode else health_panel_roll_down)
         fit_first True
@@ -353,7 +393,7 @@ screen combat_main_v2(combat_service=None):
         # Numeric Player Health Overlay
         text "[active_hp]" size 42 bold True color "#22e004" outlines [(1, "#000000", 0, 0)] align (0.5, 0.5) xoffset -25 yoffset 20
 
-    # 8. UI Control Panel (rolls up on enter, rolls down behind screen on fight)
+    # 7. UI Control Panel (rolls up on enter, rolls down behind screen on fight)
     fixed:
         at (action_panel_roll_down if fight_mode else action_panel_roll_up)
         fit_first True
@@ -383,6 +423,7 @@ screen combat_main_v2(combat_service=None):
                 selected_hover "images/combat/ui/fight_click.png"
                 xoffset -80
                 yoffset 100
+                sensitive (not fight_mode and (combat_service is None or (not combat_service.qte_active and combat_service.enemy.current_hp > 0 and combat_service.player.hp > 0)))
                 action [
                     SetScreenVariable("fight_mode", True),
                     SetScreenVariable("tv_started", True),
@@ -397,16 +438,94 @@ screen combat_main_v2(combat_service=None):
                 at Transform(zoom=0.9)
                 xoffset 60
                 yoffset 100
+                sensitive (not fight_mode and (combat_service is None or (not combat_service.qte_active and combat_service.player.food_count > 0 and combat_service.player.hp < combat_service.player.max_hp)))
                 action If(combat_service is not None, Function(combat_service.heal_player), NullAction())
 
-    # 9. Prototype Debug UI Reset Button (Visible in fight mode)
-    if fight_mode:
-        textbutton "RESET UI":
-            align (0.98, 0.02)
-            action SetScreenVariable("fight_mode", False)
-            text_color "#ff8888"
-            text_size 14
-            text_outlines [(1, "#000000", 0, 0)]
+    # 8. DEBUG Toggle Button & Menu Overlay
+    textbutton "DEBUG":
+        align (0.98, 0.02)
+        action SetScreenVariable("show_debug_menu", not show_debug_menu)
+        background "#1a1c29e6"
+        padding (12, 8)
+        text_color "#ffaa00"
+        text_size 16
+        text_bold True
+
+    if show_debug_menu:
+        # Debug Tools Panel (Top Right below Debug Button)
+        frame:
+            pos (1440, 60)
+            background "#1a1c29e6"
+            padding (20, 20)
+            xsize 440
+            vbox:
+                spacing 12
+                text "DEBUG TOOLS" size 20 bold True color "#ff5555" xalign 0.5
+
+                text "WEAPON SELECTION" size 13 bold True color "#8899ac"
+                hbox:
+                    spacing 10
+                    button:
+                        action If(combat_service is not None, Function(combat_service.select_weapon, "Knife"), SetScreenVariable("current_weapon", "Knife"))
+                        padding (16, 10)
+                        background ("#3a506b" if "Knife" in active_weapon_name else "#1c2541")
+                        hover_background "#486581"
+                        text "Knife (Arc)" size 14 color "#ffffff"
+
+                    button:
+                        action If(combat_service is not None, Function(combat_service.select_weapon, "Hammer"), SetScreenVariable("current_weapon", "Hammer"))
+                        padding (16, 10)
+                        background ("#3a506b" if "Hammer" in active_weapon_name else "#1c2541")
+                        hover_background "#486581"
+                        text "Hammer (Square)" size 14 color "#ffffff"
+
+                text "CONTROLS & LOG" size 13 bold True color "#8899ac"
+                hbox:
+                    spacing 10
+                    button:
+                        action [
+                            SetScreenVariable("fight_mode", False),
+                            If(combat_service is not None, Function(combat_service.restart_combat), NullAction())
+                        ]
+                        padding (16, 10)
+                        background "#5c1d2e"
+                        hover_background "#802840"
+                        text "Restart Combat" size 14 color "#ffaaaa"
+
+                    button:
+                        action If(combat_service is not None, Function(combat_service.toggle_log), NullAction())
+                        padding (16, 10)
+                        background ("#2b4c7e" if (combat_service is not None and combat_service.show_log) else "#1b263b")
+                        hover_background "#3e6ba8"
+                        text ("Log: ON" if (combat_service is not None and combat_service.show_log) else "Log: OFF") size 14 color "#ffffff"
+
+                if fight_mode:
+                    textbutton "RESET UI":
+                        action SetScreenVariable("fight_mode", False)
+                        text_color "#ff8888"
+                        text_size 14
+
+        # Combat Log Viewport (Bottom Right)
+        if combat_service is not None and combat_service.show_log:
+            frame:
+                pos (1320, 680)
+                background "#0d0d12e0"
+                padding (15, 15)
+                xsize 560
+                ysize 360
+                vbox:
+                    spacing 5
+                    text "COMBAT LOG" size 18 bold True color "#aaaaaa"
+                    viewport id "log_vp_v2":
+                        scrollbars "vertical"
+                        mousewheel True
+                        draggable True
+                        yadjustment combat_log_adj
+                        vbox:
+                            spacing 4
+                            for msg in combat_service.log.entries:
+                                text "[msg]" size 14 color "#dddddd"
+
 
 
 

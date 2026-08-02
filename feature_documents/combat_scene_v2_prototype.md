@@ -217,30 +217,31 @@ if combat_service is not None and (combat_service.qte_active or combat_service.s
 
 ---
 
+## 8. Turn Flow, Enemy Status HUD & Debug Tools Integration
+
+In Prototype v2, combat management and debug tools are fully integrated into `screen combat_main_v2`:
+
+1. **Turn Flow & Sensitivities**:
+   - Fight and Heal buttons in the lower UI Control Panel evaluate turn sensitivity (`sensitive (not fight_mode and ...)`). Buttons are disabled when QTE is active, or when player/enemy HP drops to 0.
+   - VICTORY / DEFEAT state overlays display when enemy HP or player HP reaches 0.
+
+2. **Enemy Status HUD**:
+   - Displays top center frame (`pos (960, 40)`) out of fight mode, detailing enemy name, current HP (`[current_hp]/[max_hp]`), and individual body part integrity (`[BROKEN]` vs `[INTACT]`).
+
+3. **Debug Toggle Button & Debug Tools Menu**:
+   - A top-right `DEBUG` toggle button (`show_debug_menu`) opens the debug control panel:
+     - Weapon selection ("Knife (Arc)", "Hammer (Square)").
+     - Restart Combat control.
+     - Log ON/OFF toggle and auto-scrolling Combat Log viewport.
+
+4. **Hit Animation Omission**:
+   - As requested, v1 hit overlay flash animations (`hit_overlay_sprite`) are completely omitted from Prototype v2 for a cleaner aesthetic.
+
 ---
 
-## 8. QTE Target Interactivity, Live Countdown & Damage Calculation Lifecycle
-
-In Prototype v2, QTE interaction is fully wired into `CombatService` (`combat_main_v2`):
-
-1. **Interactive QTE Buttons**:
-   - Inside the TV screen container, active stage targets (`combat_service.current_targets`) render as interactive `imagebutton` elements bound to `action Function(combat_service.click_target, target.target_id)`.
-   - On click, `target.mark_hit()` sets target opacity to 50% (`alpha=0.5`) and disables further clicks (`sensitive (not target.is_clicked)`).
-   - Upon completing all targets in a stage, `combat_service` advances automatically to the next stage or triggers `evaluate_qte_result()`.
-
-2. **Live TV Countdown Display**:
-   - Inside the TV frame container at bottom-left (`pos (220, 880)`), the UI displays the active stage number (`combat_service.current_stage`) and live time remaining countdown (`int(round(combat_service.qte_time_remaining))`).
-   - The countdown ticks down continuously every 0.1s (`timer 0.1 repeat True action Function(combat_service.tick_timer, 0.1)`).
-
-3. **Damage Calculation & Exit Transition**:
-   - When all targets across all stages are clicked (or timer expires at 0s), `combat_service.evaluate_qte_result()` calculates weapon damage (Slashing 100% combo for min_damage; Blunt ratio * base roll + stun on 100%), applies damage to enemy HP, updates body part thresholds, and executes enemy counterattack.
-   - Screen check `if combat_service is not None and fight_mode and not combat_service.qte_active:` transitions `fight_mode = False`.
-   - The TV frame rolls back up (`tv_roll_up`), while the Player Health Panel rolls back down displaying updated player HP, and the Enemy Hit Flash overlay decays over 1s inside the TV screen.
-
----
-
-## 9. Roadmap for Next Development Phase
-When continuing in the next session, we will proceed with:
-1. **GLSL Film Grain & CRT Shader Integration**: Enhance TV screen noise with dynamic GLSL fragment shaders (`film_grain`).
-2. **Advanced Sound Effects & VFX**: Integrate hit impact audio, QTE click sfx, and body part break animations.
+## 9. Completed System Verification & Roadmap
+- Static checks (`python manage.py check`), Ren'Py linter (`python manage.py lint`), and unit test suite (`python manage.py test global -s`) all pass (12/12 passed).
+- Next roadmap phases:
+  1. GLSL Film Grain & CRT Shader Fine-tuning.
+  2. Audio & Impact Sound Effects Integration.
 
