@@ -260,6 +260,12 @@ screen combat_main_v2(combat_service=None):
     if combat_service is not None and fight_mode and not combat_service.qte_active:
         $ fight_mode = False
 
+    $ max_strength = 2.50
+    $ max_distortion = 2.50
+    $ cur_ratio = combat_service.distortion_ratio if combat_service is not None else 1.0
+    $ cur_strength = max_strength * cur_ratio
+    $ cur_distortion = max_distortion * cur_ratio
+
     # 1. Base Clean Background Combat Image (Full 1920x1080 screen)
     add "images/combat/bg_combat.png":
         fit "cover"
@@ -283,12 +289,12 @@ screen combat_main_v2(combat_service=None):
             add "images/combat/bg_combat.png":
                 pos (-100, -100)
                 fit "cover"
-                at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
+                at film_grain(strength=cur_strength, speed=45.0, size=4.0, distortion=cur_distortion)
 
             # Distorted Enemy Sprite inside TV lens
             add "tendril_small_idle":
                 align (0.5, 0.5)
-                at film_grain(strength=1.50, speed=45.0, size=4.0, distortion=1.80)
+                at film_grain(strength=cur_strength, speed=45.0, size=4.0, distortion=cur_distortion)
 
             # Enemy Hit Flash Overlay inside TV screen
             if combat_service is not None and combat_service.show_hit_overlay:

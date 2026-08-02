@@ -226,3 +226,26 @@ init -1 python:
                 self.log.add("HEAL FAILED: No food items remaining!")
             else:
                 self.log.add("HEAL FAILED: Player HP already full.")
+
+        @property
+        def total_qte_targets(self) -> int:
+            if self.player and self.player.equipped_weapon and self.player.equipped_weapon.stages:
+                return sum(self.player.equipped_weapon.stages)
+            return 1
+
+        @property
+        def hit_qte_targets(self) -> int:
+            all_targets = list(self.completed_stage_targets)
+            for t in self.current_targets:
+                if t not in all_targets:
+                    all_targets.append(t)
+            return sum(1 for t in all_targets if t.is_clicked)
+
+        @property
+        def distortion_ratio(self) -> float:
+            total = self.total_qte_targets
+            if total <= 0:
+                return 0.0
+            hits = self.hit_qte_targets
+            return max(0.0, 1.0 - (float(hits) / float(total)))
+

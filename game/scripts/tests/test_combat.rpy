@@ -174,5 +174,32 @@ testsuite combat_service_tests:
             renpy.hide_screen("combat_main")
         pause 0.01
 
+    testcase test_dynamic_qte_distortion_ratio:
+        python:
+            service = CombatService()
+            knife = create_weapon_from_db("Knife")
+            service.start_combat(knife)
+            service.start_qte_phase()
+
+            assert service.total_qte_targets == 10, f"Expected 10 total targets for Knife, got {service.total_qte_targets}"
+            assert service.hit_qte_targets == 0, f"Expected 0 hit targets initially, got {service.hit_qte_targets}"
+            assert abs(service.distortion_ratio - 1.0) < 0.001, f"Expected initial ratio 1.0, got {service.distortion_ratio}"
+
+            # Hit 5 targets in Stage 1
+            for target in list(service.current_targets):
+                service.click_target(target.target_id)
+
+            assert service.hit_qte_targets == 5, f"Expected 5 hit targets after Stage 1, got {service.hit_qte_targets}"
+            assert abs(service.distortion_ratio - 0.5) < 0.001, f"Expected ratio 0.5 after 5 hits, got {service.distortion_ratio}"
+
+            # Hit remaining 5 targets in Stage 2
+            for target in list(service.current_targets):
+                service.click_target(target.target_id)
+
+            assert service.hit_qte_targets == 10, f"Expected 10 hit targets, got {service.hit_qte_targets}"
+            assert abs(service.distortion_ratio - 0.0) < 0.001, f"Expected ratio 0.0 (clean image) when all targets hit, got {service.distortion_ratio}"
+        pause 0.01
+
+
 
 
